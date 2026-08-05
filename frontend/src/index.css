@@ -1,0 +1,452 @@
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --panel-border: #e5e8ec;
+  --text-primary: #14181f;
+  --text-secondary: #6b7280;
+  --input-bg: #f1f3f6;
+
+  --accent: #6d28d9;
+  --accent-light: #ede9fe;
+  --correct: #16a34a;
+  --correct-bg: #ecfdf3;
+  --incorrect: #dc2626;
+  --incorrect-bg: #fef2f2;
+  --warn: #f59e0b;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  min-height: 100vh;
+}
+
+.wide {
+  max-width: 960px;
+}
+
+/* ---------- Brand ---------- */
+.brand-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.brand-mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ---------- Panels & cards ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: 9px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-lg {
+  padding: 16px 24px;
+  font-size: 16px;
+}
+
+/* ---------- Forms ---------- */
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.field input, .field textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.field input:focus, .field textarea:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.room-code-input {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ---------- Home / choice screen ---------- */
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.choice-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.choice-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.12);
+}
+
+.choice-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.choice-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* ---------- Room code display ---------- */
+.room-code-display {
+  text-align: center;
+  padding: 24px;
+}
+
+.room-code-big {
+  font-family: var(--font-mono);
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+/* ---------- Question builder ---------- */
+.question-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--input-bg);
+}
+
+.question-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.question-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.option-row input[type="text"] {
+  flex: 1;
+}
+
+.option-row input[type="radio"] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Live question (player + host view) ---------- */
+.question-live-text {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.timer-ring {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  text-align: center;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+.timer-ring.urgent {
+  color: var(--incorrect);
+}
+
+.option-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.option-btn {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 20px 16px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.option-btn:disabled {
+  cursor: default;
+}
+
+.option-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.option-btn.correct {
+  border-color: var(--correct);
+  background: var(--correct-bg);
+  color: var(--correct);
+}
+
+.option-btn.incorrect {
+  border-color: var(--incorrect);
+  background: var(--incorrect-bg);
+  color: var(--incorrect);
+}
+
+.option-letter {
+  font-family: var(--font-mono);
+  opacity: 0.5;
+  margin-right: 8px;
+}
+
+/* ---------- Live tally bars (host view) ---------- */
+.tally-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tally-track {
+  height: 24px;
+  background: var(--input-bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tally-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.tally-fill.correct-fill {
+  background: var(--correct);
+}
+
+.tally-count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: right;
+}
+
+/* ---------- Leaderboard ---------- */
+.leaderboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.leaderboard-row:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-rank {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  width: 30px;
+}
+
+.leaderboard-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.leaderboard-score {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.leaderboard-row.rank-1 .leaderboard-rank { color: #f59e0b; }
+.leaderboard-row.rank-2 .leaderboard-rank { color: #94a3b8; }
+.leaderboard-row.rank-3 .leaderboard-rank { color: #b45309; }
+
+/* ---------- Misc ---------- */
+.center-text {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--panel-border);
+  padding: 5px 12px;
+  border-radius: 100px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--correct);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(22, 163, 74, 0); }
+}
+
+.error-text {
+  color: var(--incorrect);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.stat-inline {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.stat-inline-item {
+  text-align: center;
+}
+
+.stat-inline-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stat-inline-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 480px) {
+  .choice-grid { grid-template-columns: 1fr; }
+  .option-buttons { grid-template-columns: 1fr; }
+  .room-code-big { font-size: 36px; }
+}
