@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { socket } from '../socket'
+import { PlusCircle, Trash2, ArrowRight } from 'lucide-react'
 
 const emptyQuestion = () => ({
   questionText: '',
@@ -69,14 +69,10 @@ function HostCreate() {
 
   return (
     <div className="app wide">
-      <div className="brand-header">
-        <div className="brand-mark">⚡ Sparq</div>
-        <span className="brand-sub">build your quiz</span>
-      </div>
-
       <div className="panel">
+        <h2 className="panel-title">Quiz Details</h2>
         <div className="field">
-          <label>Your name (shown to participants)</label>
+          <label>Your Name (shown to participants)</label>
           <input value={hostName} onChange={(e) => setHostName(e.target.value)} placeholder="e.g. Nikhil" />
         </div>
       </div>
@@ -86,8 +82,8 @@ function HostCreate() {
           <div className="question-card-header">
             <span className="question-number">QUESTION {qIndex + 1}</span>
             {questions.length > 1 && (
-              <button className="btn btn-ghost" onClick={() => removeQuestion(qIndex)}>
-                Remove
+              <button className="btn btn-ghost" onClick={() => removeQuestion(qIndex)} style={{ padding: '8px 12px', color: 'var(--incorrect)' }}>
+                <Trash2 size={16} />
               </button>
             )}
           </div>
@@ -114,11 +110,15 @@ function HostCreate() {
                 placeholder={`Option ${letter}`}
                 value={q.options[optIndex]}
                 onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
+                style={{ 
+                  borderColor: q.correctOption === letter ? 'var(--correct)' : 'var(--panel-border)',
+                  boxShadow: q.correctOption === letter ? '0 0 0 1px var(--correct)' : 'none'
+                }}
               />
             </div>
           ))}
 
-          <div className="field" style={{ marginTop: 10 }}>
+          <div className="field" style={{ marginTop: 16 }}>
             <label>Time limit (seconds)</label>
             <input
               type="number"
@@ -126,20 +126,20 @@ function HostCreate() {
               max="120"
               value={q.timeLimit}
               onChange={(e) => updateQuestion(qIndex, { timeLimit: parseInt(e.target.value) || 20 })}
-              style={{ width: 100 }}
+              style={{ width: 120 }}
             />
           </div>
         </div>
       ))}
 
-      <button className="btn btn-ghost btn-block" onClick={addQuestion} style={{ marginBottom: 20 }}>
-        + Add another question
+      <button className="btn btn-ghost btn-block" onClick={addQuestion} style={{ marginBottom: 24, borderStyle: 'dashed' }}>
+        <PlusCircle size={18} /> Add another question
       </button>
 
       {error && <p className="error-text">{error}</p>}
 
       <button className="btn btn-primary btn-block btn-lg" onClick={handleCreate} disabled={creating}>
-        {creating ? 'Creating room…' : 'Create Room'}
+        {creating ? 'Creating room…' : 'Create Room'} <ArrowRight size={20} />
       </button>
     </div>
   )

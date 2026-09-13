@@ -97,11 +97,6 @@ function PlayerRoom() {
 
   return (
     <div className="app">
-      <div className="brand-header">
-        <div className="brand-mark">⚡ Sparq</div>
-        <span className="brand-sub">{name}</span>
-      </div>
-
       {(phase === 'lobby' || phase === 'waiting-for-next') && (
         <div className="panel">
           <p className="center-text">Waiting for the host to start the quiz…</p>

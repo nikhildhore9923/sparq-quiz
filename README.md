@@ -1,88 +1,64 @@
-# Sparq — Live Quiz Platform
+# Sparq ⚡
 
-A real-time, Kahoot-style quiz app. Host creates a multi-question quiz, participants
-join from their phones with a room code, and everyone sees questions, live results,
-and a leaderboard update instantly via WebSockets - no page refresh, ever.
+Sparq is a high-performance, real-time multiplayer quiz platform built for speed, interactivity, and scale. It serves as a modern alternative to platforms like Kahoot, demonstrating a clean separation of standard REST APIs and server-authoritative WebSocket state machines.
 
-## How it's different from a basic CRUD project
-- **Real-time, not request/response.** Built on Socket.io (WebSockets), not REST -
-  the server pushes updates to every connected client the instant something happens.
-- **Server-authoritative timing.** The question countdown deadline is set and enforced
-  by the server, not trusted from any client's clock - this is what makes speed-based
-  scoring fair and cheat-resistant.
-- **Speed-based scoring.** Correct answers score 500-1000 points depending on how much
-  time was left when you answered - real logic, not just "correct = 1 point."
-- **Reconnection handling.** If a participant's phone drops connection mid-quiz (very
-  common on mobile data), they can rejoin with their score intact using a saved token.
-- **Persisted analytics.** Every quiz's results (per-question accuracy, average response
-  time, final rankings) are saved to a real SQL database, not just held in memory.
+## 🚀 Features
 
-## Folder structure
-```
-quiz-app/
-├── backend/
-│   ├── server.js       - Express + Socket.io server, all real-time logic
-│   ├── db.js            - SQLite schema + database helpers
-│   ├── test_e2e.js       - automated test simulating a full quiz (host + 2 players)
-│   └── package.json
-└── frontend/
-    └── src/
-        ├── socket.js      - Socket.io client connection
-        ├── App.jsx         - routes
-        └── pages/
-            ├── Home.jsx        - choose Host or Join
-            ├── HostCreate.jsx   - build a quiz
-            ├── HostRoom.jsx      - live control panel
-            ├── PlayerJoin.jsx    - enter room code + name
-            └── PlayerRoom.jsx    - answer questions live
+- **Real-Time Multiplayer**: Instantaneous updates using Socket.io for lobbies, answers, and leaderboards.
+- **Server-Authoritative Game State**: Clients cannot manipulate timers or scores; the server handles a strict state machine to prevent race conditions.
+- **Streak Multipliers**: Answer consecutive questions correctly to build streaks (up to 1.5x score) for competitive gameplay.
+- **Live Host Analytics**: The host sees live answer tallies, the fastest responder per question, and difficulty categorization dynamically computed at the end.
+- **Robust Reconnection**: Players can drop off and seamlessly rejoin their session using a persistent token system without losing their score or streak.
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    Client(React SPA) <-->|REST: Quiz Creation| Express(Node.js + Express)
+    Client <-->|Socket.io: Live Gameplay| Express
+    Express <-->|Read/Write| DB[(SQLite / better-sqlite3)]
+    Express <-->|State Machine| State(In-Memory Active Rooms)
 ```
 
-## Setup - 2 terminals
+### REST vs. Socket.io Responsibilities
+- **REST APIs**: Used strictly for persistent actions, such as generating the quiz room and fetching static history. This avoids unnecessary WebSocket overhead.
+- **Socket.io**: Used exclusively for transient, high-speed game state updates (timers, answers, leaderboards) managed by an in-memory `Map` to minimize database writes.
 
-### Terminal 1: Backend
-```
-cd backend
-npm install
-npm start
-```
-Should print: `Quiz server running on http://localhost:4000`
+## 🛠️ Database Schema (SQLite)
 
-### Terminal 2: Frontend
-```
-cd frontend
-npm install
-npm run dev
-```
-Open the URL it gives you (usually http://localhost:5173).
+- **rooms**: Stores the quiz session and current state (`WAITING`, `STARTING`, `QUESTION_ACTIVE`, `QUESTION_ENDED`, `FINISHED`).
+- **questions**: Stores question text, options, correct answer, and time limit.
+- **participants**: Tracks player names, tokens (for reconnection), scores, and streaks.
+- **answers**: Logs every answer attempt, response time, and points awarded.
 
-## How to actually test it (needs 2+ browser windows/devices)
-1. Open the app in one browser tab, click **Host a Quiz**, add 2-3 questions, click Create Room.
-2. You'll get a 6-character room code.
-3. Open the app in a **different browser tab or your phone** (see note below), click
-   **Join a Quiz**, enter the code and a name.
-4. Back on the host tab, click **Start Quiz** once at least one player has joined.
-5. Answer on the player tab before the timer runs out, watch the host tab's live bar chart update.
-6. Click **Next Question** on the host to continue, or let the quiz finish to see final analytics.
+## 🏎️ Scoring Algorithm
 
-## Testing from your actual phone (same WiFi)
-`vite.config.js` is already set to `host: true`, which allows other devices on your
-WiFi to reach the dev server. Find your computer's local IP (e.g. `192.168.1.5`,
-run `ipconfig` on Windows and look for IPv4 Address), then on your phone visit:
-```
-http://192.168.1.5:5173
-```
-You'll also need to update `frontend/.env` (copy from `.env.example`) so the phone's
-browser can reach your backend:
-```
-VITE_SERVER_URL=http://192.168.1.5:4000
-```
+Points are calculated using a time-decay algorithm combined with a streak multiplier:
+1. **Base Points**: 500 points for a correct answer.
+2. **Speed Bonus**: Up to 500 additional points based on how quickly the user answered relative to the time limit.
+3. **Streak Multiplier**: Consecutive correct answers grant a 1.0x, 1.1x, 1.2x... up to 1.5x multiplier to the final score.
 
-## Running the automated test
-This simulates a full quiz (host + 2 players, real answers, reconnection, timeout)
-without needing any browser at all - useful for confirming nothing broke after a change.
-```
-cd backend
-npm install socket.io-client   # test-only dependency, not needed for the app itself
-node server.js                  # in one terminal
-node test_e2e.js                # in another - should print "20 passed, 0 failed"
-```
+## 💻 Local Setup
+
+1. **Clone the repository.**
+2. **Install dependencies:**
+   ```bash
+   cd backend && npm install
+   cd ../frontend && npm install
+   ```
+3. **Start the Backend:**
+   ```bash
+   cd backend && npm start
+   ```
+4. **Start the Frontend:**
+   ```bash
+   cd frontend && npm run dev
+   ```
+5. Open `http://localhost:5173` in your browser.
+
+## 🧪 Testing
+The architecture is designed for testability by decoupling the database connection (`database.js`), REST controllers (`quizController.js`), and the Socket state machine (`socketManager.js`).
+
+## 🛡️ Security & Concurrency Handling
+- **Race Condition Prevention**: The server relies on timestamps and a strict state machine to process answers, dropping any late or duplicate submissions even if clients manipulate their local clock.
+- **Connection Drops**: Participant tokens handle duplicate tabs and dropped mobile connections without creating ghost players.

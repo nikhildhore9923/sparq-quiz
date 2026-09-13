@@ -61,13 +61,6 @@ function HostRoom() {
 
   return (
     <div className="app wide">
-      <div className="brand-header">
-        <div className="brand-mark">⚡ Sparq</div>
-        <span className="pulse-badge">
-          <span className="pulse-dot" /> Host view
-        </span>
-      </div>
-
       {phase === 'lobby' && (
         <div className="panel room-code-display">
           <p className="center-text">Share this code with participants</p>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LogIn } from 'lucide-react'
 import { socket } from '../socket'
 
 function PlayerJoin() {
@@ -26,12 +27,8 @@ function PlayerJoin() {
 
   return (
     <div className="app">
-      <div className="brand-header">
-        <div className="brand-mark">⚡ Sparq</div>
-        <span className="brand-sub">join a live quiz</span>
-      </div>
-
       <div className="panel">
+        <h2 className="panel-title" style={{ textAlign: 'center', fontSize: 24, marginBottom: 32 }}>Join a Live Quiz</h2>
         <div className="field">
           <label>Room code</label>
           <input
@@ -43,14 +40,19 @@ function PlayerJoin() {
           />
         </div>
         <div className="field">
-          <label>Your name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Priya" />
+          <label>Your Name</label>
+          <input 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            placeholder="e.g. Priya"
+            style={{ textAlign: 'center', fontSize: 20, fontWeight: 600 }}
+          />
         </div>
 
         {error && <p className="error-text">{error}</p>}
 
-        <button className="btn btn-primary btn-block btn-lg" onClick={handleJoin} disabled={joining}>
-          {joining ? 'Joining…' : 'Join Quiz'}
+        <button className="btn btn-primary btn-block btn-lg" onClick={handleJoin} disabled={joining} style={{ marginTop: 24 }}>
+          {joining ? 'Joining…' : 'Join Quiz'} <LogIn size={20} />
         </button>
       </div>
     </div>
