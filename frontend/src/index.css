@@ -250,7 +250,7 @@ body {
   letter-spacing: 0.02em;
 }
 
-.field input, .field textarea {
+.field input, .field textarea, .base-input {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--panel-border);
@@ -262,7 +262,7 @@ body {
   transition: var(--transition);
 }
 
-.field input:focus, .field textarea:focus {
+.field input:focus, .field textarea:focus, .base-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-light);

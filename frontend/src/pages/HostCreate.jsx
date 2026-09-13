@@ -37,7 +37,13 @@ function HostCreate() {
   const handleCreate = async () => {
     setError('')
     if (!hostName.trim()) return setError('Enter your name.')
-    for (const q of questions) {
+    
+    const formattedQuestions = questions.map(q => ({
+      ...q,
+      timeLimit: parseInt(q.timeLimit) || 20
+    }))
+
+    for (const q of formattedQuestions) {
       if (!q.questionText.trim() || q.options.some((o) => !o.trim())) {
         return setError('Every question needs text and all 4 options filled in.')
       }
@@ -49,7 +55,7 @@ function HostCreate() {
       const res = await fetch(`${serverUrl}/api/quiz/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostName, questions })
+        body: JSON.stringify({ hostName, questions: formattedQuestions })
       })
       const data = await res.json()
       
@@ -104,9 +110,11 @@ function HostCreate() {
                 checked={q.correctOption === letter}
                 onChange={() => updateQuestion(qIndex, { correctOption: letter })}
                 title="Mark as correct answer"
+                className="correct-radio"
               />
               <input
                 type="text"
+                className="base-input"
                 placeholder={`Option ${letter}`}
                 value={q.options[optIndex]}
                 onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
@@ -124,8 +132,9 @@ function HostCreate() {
               type="number"
               min="5"
               max="120"
+              className="base-input"
               value={q.timeLimit}
-              onChange={(e) => updateQuestion(qIndex, { timeLimit: parseInt(e.target.value) || 20 })}
+              onChange={(e) => updateQuestion(qIndex, { timeLimit: e.target.value })}
               style={{ width: 120 }}
             />
           </div>

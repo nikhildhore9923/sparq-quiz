@@ -134,7 +134,7 @@ function HostRoom() {
           )}
 
           <button className="btn btn-primary btn-block btn-lg" onClick={nextQuestion} style={{ marginTop: 16 }}>
-            Next Question
+            {question.questionNumber === question.totalQuestions ? 'Finish Quiz & Show Leaderboard' : 'Next Question'}
           </button>
         </div>
       )}
