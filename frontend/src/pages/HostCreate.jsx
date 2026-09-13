@@ -34,7 +34,7 @@ function HostCreate() {
   const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion()])
   const removeQuestion = (index) => setQuestions((prev) => prev.filter((_, i) => i !== index))
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setError('')
     if (!hostName.trim()) return setError('Enter your name.')
     for (const q of questions) {
@@ -44,12 +44,27 @@ function HostCreate() {
     }
 
     setCreating(true)
-    socket.emit('host:createRoom', { hostName, questions }, (res) => {
+    try {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+      const res = await fetch(`${serverUrl}/api/quiz/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostName, questions })
+      })
+      const data = await res.json()
+      
       setCreating(false)
-      if (res.error) return setError(res.error)
-      sessionStorage.setItem('hostRoomCode', res.roomCode)
-      navigate(`/host/${res.roomCode}`)
-    })
+      if (!data.success) {
+        if (data.errors) return setError(data.errors.map(e => e.message).join(', '));
+        return setError(data.error || 'Failed to create room')
+      }
+      
+      sessionStorage.setItem('hostRoomCode', data.roomCode)
+      navigate(`/host/${data.roomCode}`)
+    } catch (err) {
+      setCreating(false)
+      setError('Could not connect to server')
+    }
   }
 
   return (

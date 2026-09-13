@@ -15,7 +15,7 @@ function HostRoom() {
   useEffect(() => {
     // If the host refreshed the page, socket.id changed - rejoin the room
     // so we keep receiving broadcasts for it.
-    socket.emit('host:rejoin', { roomCode }, () => {})
+    socket.emit('host:joinRoom', { roomCode }, () => {})
 
     socket.on('lobby:update', ({ participantCount }) => setParticipantCount(participantCount))
 
@@ -131,6 +131,15 @@ function HostRoom() {
               <span className="tally-count">{questionResult.optionCounts[letter]}</span>
             </div>
           ))}
+          
+          {questionResult.fastestResponder && (
+            <div style={{ marginTop: 24, padding: 12, backgroundColor: 'rgba(139, 92, 246, 0.1)', borderRadius: 8, border: '1px solid var(--accent)' }}>
+              <p className="center-text" style={{ margin: 0 }}>
+                ⚡ Fastest correct answer: <strong>{questionResult.fastestResponder.name}</strong> ({(questionResult.fastestResponder.time / 1000).toFixed(2)}s)
+              </p>
+            </div>
+          )}
+
           <button className="btn btn-primary btn-block btn-lg" onClick={nextQuestion} style={{ marginTop: 16 }}>
             Next Question
           </button>
@@ -167,7 +176,16 @@ function HostRoom() {
             <h2 className="panel-title">Question Analytics</h2>
             {finalStats.map((q, i) => (
               <div key={i} style={{ marginBottom: 16 }}>
-                <p style={{ fontWeight: 600, marginBottom: 6 }}>{i + 1}. {q.questionText}</p>
+                <p style={{ fontWeight: 600, marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{i + 1}. {q.questionText}</span>
+                  <span style={{ 
+                    fontSize: 12, 
+                    padding: '2px 8px', 
+                    borderRadius: 12, 
+                    backgroundColor: q.difficulty === 'Hard' ? 'var(--incorrect-bg)' : q.difficulty === 'Easy' ? 'var(--correct-bg)' : 'rgba(245, 158, 11, 0.1)',
+                    color: q.difficulty === 'Hard' ? 'var(--incorrect)' : q.difficulty === 'Easy' ? 'var(--correct)' : 'var(--warn)'
+                  }}>{q.difficulty}</span>
+                </p>
                 <p className="center-text" style={{ textAlign: 'left' }}>
                   {q.accuracyPct}% correct · avg response {(q.avgResponseMs / 1000).toFixed(1)}s · {q.totalAnswered} answered
                 </p>

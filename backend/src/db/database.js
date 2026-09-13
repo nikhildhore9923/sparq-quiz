@@ -1,5 +1,9 @@
 const Database = require("better-sqlite3");
-const db = new Database("./quiz.db");
+const path = require("path");
+
+// Put the db in the root of the backend folder
+const dbPath = path.join(__dirname, "../../quiz.db");
+const db = new Database(dbPath);
 
 db.pragma("journal_mode = WAL");
 
@@ -8,7 +12,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code TEXT UNIQUE NOT NULL,
     host_name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'waiting', -- waiting | active | finished
+    status TEXT NOT NULL DEFAULT 'WAITING', -- WAITING | STARTING | QUESTION_ACTIVE | QUESTION_ENDED | FINISHED
     current_question_index INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -33,6 +37,7 @@ db.exec(`
     token TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     score INTEGER DEFAULT 0,
+    streak INTEGER DEFAULT 0,
     connected INTEGER DEFAULT 1,
     joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (room_id) REFERENCES rooms(id)
@@ -53,8 +58,15 @@ db.exec(`
   );
 `);
 
+// Graceful migrations for existing deployed databases
+try {
+  db.prepare("ALTER TABLE participants ADD COLUMN streak INTEGER DEFAULT 0").run();
+} catch (e) {
+  // column might already exist
+}
+
 function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1 - easy to misread on a phone
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1
   let code;
   let exists = true;
   while (exists) {

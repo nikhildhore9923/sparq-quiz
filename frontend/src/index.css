@@ -1,17 +1,17 @@
 :root {
-  --bg: #f7f8fa;
-  --panel: #ffffff;
-  --panel-border: #e5e8ec;
-  --text-primary: #14181f;
-  --text-secondary: #6b7280;
-  --input-bg: #f1f3f6;
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-border: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --input-bg: #0f172a;
 
-  --accent: #6d28d9;
-  --accent-light: #ede9fe;
-  --correct: #16a34a;
-  --correct-bg: #ecfdf3;
-  --incorrect: #dc2626;
-  --incorrect-bg: #fef2f2;
+  --accent: #8b5cf6;
+  --accent-light: #4c1d95;
+  --correct: #22c55e;
+  --correct-bg: #14532d;
+  --incorrect: #ef4444;
+  --incorrect-bg: #7f1d1d;
   --warn: #f59e0b;
 
   --font-display: "Space Grotesk", sans-serif;

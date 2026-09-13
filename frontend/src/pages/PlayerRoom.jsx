@@ -89,7 +89,7 @@ function PlayerRoom() {
       (res) => {
         if (res.error) return
         setScore((s) => s + res.points)
-        setLastResult({ selected: letter, isCorrect: res.isCorrect, points: res.points })
+        setLastResult({ selected: letter, isCorrect: res.isCorrect, points: res.points, streak: res.streak })
         setPhase('answered')
       }
     )
@@ -151,10 +151,15 @@ function PlayerRoom() {
           )}
 
           {phase === 'ended' && lastResult && (
-            <p className="center-text" style={{ marginTop: 16 }}>
-              {lastResult.isCorrect ? `You got it right! +${lastResult.points} points` : 'Not quite - see the correct answer above.'}
-              {myRank && ` · You're rank #${myRank}`}
-            </p>
+            <div className="center-text" style={{ marginTop: 16 }}>
+              {lastResult.isCorrect ? (
+                <>
+                  <p>You got it right! <strong>+${lastResult.points} points</strong></p>
+                  {lastResult.streak > 1 && <p style={{ color: '#f59e0b', fontWeight: 'bold' }}>🔥 {lastResult.streak} Answer Streak! Multiplier applied.</p>}
+                </>
+              ) : 'Not quite - see the correct answer above.'}
+              {myRank && <p>You're rank #{myRank}</p>}
+            </div>
           )}
 
           <p className="center-text" style={{ marginTop: 12 }}>Total score: <strong>{score}</strong></p>
