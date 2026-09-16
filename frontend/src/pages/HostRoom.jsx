@@ -83,18 +83,19 @@ function HostRoom() {
           <div style={{ width: '100%', maxWidth: '300px' }}>
             <div className="stat-inline" style={{ marginTop: 0 }}>
               <div className="stat-inline-item" style={{ flex: 1 }}>
-              <div className="stat-inline-value">{participantCount}</div>
-              <div className="stat-inline-label">Joined</div>
+                <div className="stat-inline-value">{participantCount}</div>
+                <div className="stat-inline-label">Joined</div>
+              </div>
             </div>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={startQuiz}
+              disabled={participantCount === 0}
+              style={{ marginTop: 10, width: '100%' }}
+            >
+              {participantCount === 0 ? 'Waiting for participants…' : 'Start Quiz'}
+            </button>
           </div>
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={startQuiz}
-            disabled={participantCount === 0}
-            style={{ marginTop: 10 }}
-          >
-            {participantCount === 0 ? 'Waiting for participants…' : 'Start Quiz'}
-          </button>
         </div>
       )}
 
