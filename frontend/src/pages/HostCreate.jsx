@@ -21,6 +21,9 @@ function HostCreate() {
   const [creating, setCreating] = useState(false)
   const [savedQuizzes, setSavedQuizzes] = useState([])
   
+  // Custom Modal State
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', value: '', onConfirm: null })
+  
   // Drag and Drop State
   const [draggedItem, setDraggedItem] = useState(null)
 
@@ -39,32 +42,45 @@ function HostCreate() {
     }
   }
 
-  const handleSaveToBank = async () => {
-    const title = prompt("Enter a title to save this quiz template:")
-    if (!title) return
-    try {
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
-      const res = await fetch(`${serverUrl}/api/quiz/bank/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, questions })
-      })
-      const data = await res.json()
-      if (data.success) {
-        alert("Quiz saved successfully!")
-        fetchSavedQuizzes()
-      } else {
-        alert("Error: " + data.error)
+  const handleSaveToBank = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'prompt',
+      title: 'Save Quiz Template',
+      value: '',
+      onConfirm: async (title) => {
+        if (!title.trim()) return
+        try {
+          const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+          const res = await fetch(`${serverUrl}/api/quiz/bank/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, questions })
+          })
+          const data = await res.json()
+          if (data.success) {
+            setModalConfig({ isOpen: true, type: 'alert', title: 'Quiz saved successfully!', onConfirm: null })
+            fetchSavedQuizzes()
+          } else {
+            setModalConfig({ isOpen: true, type: 'alert', title: 'Error: ' + data.error, onConfirm: null })
+          }
+        } catch (e) {
+          setModalConfig({ isOpen: true, type: 'alert', title: 'Failed to save to bank. Is the server running?', onConfirm: null })
+        }
       }
-    } catch (e) {
-      alert("Failed to save.")
-    }
+    })
   }
 
   const handleLoadFromBank = (quiz) => {
-    if (window.confirm(`Load "${quiz.title}"? This will replace your current questions.`)) {
-      setQuestions(quiz.questions)
-    }
+    if (!quiz) return;
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      title: `Load "${quiz.title}"?`,
+      onConfirm: () => {
+        setQuestions(quiz.questions)
+      }
+    })
   }
 
   const handleGenerate = async () => {
@@ -337,6 +353,43 @@ function HostCreate() {
       <button className="btn btn-primary btn-block btn-lg" onClick={handleCreate} disabled={creating}>
         {creating ? 'Creating room…' : 'Create Room'} <ArrowRight size={20} />
       </button>
+
+      {/* Custom Modal Overlay */}
+      {modalConfig.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ marginTop: 0 }}>{modalConfig.title}</h3>
+            {modalConfig.type === 'prompt' && (
+              <input
+                className="base-input"
+                autoFocus
+                value={modalConfig.value}
+                onChange={(e) => setModalConfig({ ...modalConfig, value: e.target.value })}
+                placeholder="Type here..."
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              {modalConfig.type !== 'alert' && (
+                <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: false, type: '', title: '', value: '', onConfirm: null })}>
+                  Cancel
+                </button>
+              )}
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  if (modalConfig.onConfirm) modalConfig.onConfirm(modalConfig.value)
+                  if (modalConfig.type !== 'prompt' || modalConfig.value.trim()) {
+                    setModalConfig({ isOpen: false, type: '', title: '', value: '', onConfirm: null })
+                  }
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
