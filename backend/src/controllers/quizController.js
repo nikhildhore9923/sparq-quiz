@@ -71,11 +71,49 @@ exports.getQuizStatus = (req, res) => {
   res.json({ success: true, status: room.status, hostName: room.host_name });
 };
 
-exports.generateQuestions = (req, res) => {
+exports.generateQuestions = async (req, res) => {
   const { topic } = req.body;
   if (!topic) return res.status(400).json({ success: false, error: "Topic is required" });
 
-  // Mock AI Generation - in a real app this would call OpenAI/Anthropic
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const prompt = `Generate exactly 5 multiple choice trivia questions about "${topic}".
+Return ONLY a valid JSON array of objects. Do not include markdown formatting, backticks, or any other text.
+Each object in the array must have exactly these keys:
+- questionText (string, the trivia question)
+- options (array of exactly 4 strings, the possible answers)
+- correctOption (string, exactly "A", "B", "C", or "D")
+- timeLimit (number, exactly 20)`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.7
+          }
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "Gemini API Error");
+
+      const text = data.candidates[0].content.parts[0].text;
+      const questions = JSON.parse(text);
+      
+      return res.json({ success: true, questions });
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      // Fall through to mock if it fails
+      console.log("Falling back to mock questions...");
+    }
+  }
+
+  // Mock Fallback (used if no API key or if API fails)
   const mockQuestions = [
     {
       questionText: `What is the core concept of ${topic}?`,
@@ -109,8 +147,7 @@ exports.generateQuestions = (req, res) => {
     }
   ];
 
-  // Simulate network delay
   setTimeout(() => {
     res.json({ success: true, questions: mockQuestions });
-  }, 1500);
+  }, 1000);
 };
