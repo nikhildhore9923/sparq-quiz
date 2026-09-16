@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PlusCircle, Trash2, ArrowRight } from 'lucide-react'
+import { PlusCircle, Trash2, ArrowRight, Save, Download, GripVertical } from 'lucide-react'
 
 const emptyQuestion = () => ({
   questionText: '',
@@ -14,10 +14,58 @@ function HostCreate() {
   const [hostName, setHostName] = useState('')
   const [mode, setMode] = useState('Classic')
   const [topic, setTopic] = useState('')
+  const [numQuestions, setNumQuestions] = useState(5)
   const [generating, setGenerating] = useState(false)
   const [questions, setQuestions] = useState([emptyQuestion()])
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [savedQuizzes, setSavedQuizzes] = useState([])
+  
+  // Drag and Drop State
+  const [draggedItem, setDraggedItem] = useState(null)
+
+  useEffect(() => {
+    fetchSavedQuizzes()
+  }, [])
+
+  const fetchSavedQuizzes = async () => {
+    try {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+      const res = await fetch(`${serverUrl}/api/quiz/bank/load`)
+      const data = await res.json()
+      if (data.success) setSavedQuizzes(data.quizzes)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleSaveToBank = async () => {
+    const title = prompt("Enter a title to save this quiz template:")
+    if (!title) return
+    try {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+      const res = await fetch(`${serverUrl}/api/quiz/bank/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, questions })
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert("Quiz saved successfully!")
+        fetchSavedQuizzes()
+      } else {
+        alert("Error: " + data.error)
+      }
+    } catch (e) {
+      alert("Failed to save.")
+    }
+  }
+
+  const handleLoadFromBank = (quiz) => {
+    if (window.confirm(`Load "${quiz.title}"? This will replace your current questions.`)) {
+      setQuestions(quiz.questions)
+    }
+  }
 
   const handleGenerate = async () => {
     if (!topic.trim()) return setError('Enter a topic to generate questions.')
@@ -28,7 +76,7 @@ function HostCreate() {
       const res = await fetch(`${serverUrl}/api/quiz/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic })
+        body: JSON.stringify({ topic, numQuestions })
       })
       const data = await res.json()
       if (data.success && data.questions) {
@@ -55,6 +103,49 @@ function HostCreate() {
         return { ...q, options }
       })
     )
+  }
+
+  const handleDragStart = (e, qIndex, optIndex) => {
+    setDraggedItem({ qIndex, optIndex })
+    // e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault() // necessary to allow dropping
+  }
+
+  const handleDrop = (e, targetQIndex, targetOptIndex) => {
+    e.preventDefault()
+    if (!draggedItem) return
+    if (draggedItem.qIndex !== targetQIndex) return // Only reorder within the same question
+    if (draggedItem.optIndex === targetOptIndex) return
+
+    setQuestions(prev => {
+      return prev.map((q, i) => {
+        if (i !== targetQIndex) return q
+        
+        const newOptions = [...q.options]
+        const draggedValue = newOptions[draggedItem.optIndex]
+        const targetValue = newOptions[targetOptIndex]
+        
+        newOptions[draggedItem.optIndex] = targetValue
+        newOptions[targetOptIndex] = draggedValue
+
+        // Update correctOption letter if it was swapped
+        const letters = ['A', 'B', 'C', 'D']
+        const correctIndex = letters.indexOf(q.correctOption)
+        let newCorrectOption = q.correctOption
+
+        if (correctIndex === draggedItem.optIndex) {
+          newCorrectOption = letters[targetOptIndex]
+        } else if (correctIndex === targetOptIndex) {
+          newCorrectOption = letters[draggedItem.optIndex]
+        }
+
+        return { ...q, options: newOptions, correctOption: newCorrectOption }
+      })
+    })
+    setDraggedItem(null)
   }
 
   const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion()])
@@ -101,6 +192,22 @@ function HostCreate() {
 
   return (
     <div className="app wide">
+      {/* Quiz Bank Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontFamily: 'var(--font-display)' }}>Create Quiz</h1>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {savedQuizzes.length > 0 && (
+            <select className="base-input" onChange={(e) => handleLoadFromBank(savedQuizzes[e.target.value])} style={{ padding: '8px 12px', width: 'auto' }}>
+              <option value="">Load from Bank...</option>
+              {savedQuizzes.map((q, i) => <option key={q.id} value={i}>{q.title}</option>)}
+            </select>
+          )}
+          <button className="btn btn-ghost" onClick={handleSaveToBank}>
+            <Save size={16} /> Save to Bank
+          </button>
+        </div>
+      </div>
+
       <div className="panel" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 300px' }}>
           <h2 className="panel-title">Quiz Details</h2>
@@ -108,23 +215,45 @@ function HostCreate() {
             <label>Your Name (shown to participants)</label>
             <input value={hostName} onChange={(e) => setHostName(e.target.value)} placeholder="e.g. Nikhil" className="base-input" />
           </div>
+          
+          {/* Feature 2: Premium Game Modes UI */}
           <div className="field">
             <label>Game Mode</label>
-            <select value={mode} onChange={(e) => setMode(e.target.value)} className="base-input">
-              <option value="Classic">Classic (Standard rules)</option>
-              <option value="Rapid Fire">Rapid Fire (Half time limits)</option>
-              <option value="Survival">Survival (1 wrong = eliminated)</option>
-            </select>
+            <div className="mode-cards-grid">
+              {[
+                { id: 'Classic', icon: '🎯', desc: 'Standard rules and timing.' },
+                { id: 'Rapid Fire', icon: '⚡', desc: 'Half time, double pressure.' },
+                { id: 'Survival', icon: '💀', desc: 'One wrong answer = eliminated.' }
+              ].map(m => (
+                <div 
+                  key={m.id} 
+                  className={`mode-card ${mode === m.id ? 'active' : ''}`}
+                  onClick={() => setMode(m.id)}
+                >
+                  <div className="mode-card-icon">{m.icon}</div>
+                  <div className="mode-card-title">{m.id}</div>
+                  <div className="mode-card-desc">{m.desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Feature 1: Dynamic AI Generator */}
         <div style={{ flex: '1 1 300px', background: 'var(--bg-secondary)', padding: '20px', borderRadius: 'var(--radius-md)' }}>
           <h3 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>✨ Auto-Generate with AI</h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Type a topic and let our mock AI instantly generate 5 questions for you!</p>
-          <div className="field" style={{ display: 'flex', gap: '8px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Instantly generate trivia questions!</p>
+          <div className="field">
+            <label>Topic</label>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. JavaScript Basics" className="base-input" />
-            <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
-              {generating ? '...' : 'Generate'}
+          </div>
+          <div className="field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label>Count (Max 20)</label>
+              <input type="number" min="1" max="20" value={numQuestions} onChange={(e) => setNumQuestions(e.target.value)} className="base-input" />
+            </div>
+            <button className="btn btn-primary" onClick={handleGenerate} disabled={generating} style={{ height: '49px' }}>
+              {generating ? 'Generating...' : 'Generate'}
             </button>
           </div>
         </div>
@@ -143,35 +272,46 @@ function HostCreate() {
 
           <div className="field">
             <input
+              className="base-input"
               placeholder="Question text"
               value={q.questionText}
               onChange={(e) => updateQuestion(qIndex, { questionText: e.target.value })}
             />
           </div>
 
-          {['A', 'B', 'C', 'D'].map((letter, optIndex) => (
-            <div className="option-row" key={letter}>
-              <input
-                type="radio"
-                name={`correct-${qIndex}`}
-                checked={q.correctOption === letter}
-                onChange={() => updateQuestion(qIndex, { correctOption: letter })}
-                title="Mark as correct answer"
-                className="correct-radio"
-              />
-              <input
-                type="text"
-                className="base-input"
-                placeholder={`Option ${letter}`}
-                value={q.options[optIndex]}
-                onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
-                style={{ 
-                  borderColor: q.correctOption === letter ? 'var(--correct)' : 'var(--panel-border)',
-                  boxShadow: q.correctOption === letter ? '0 0 0 1px var(--correct)' : 'none'
-                }}
-              />
-            </div>
-          ))}
+          <div className="options-drag-container">
+            {['A', 'B', 'C', 'D'].map((letter, optIndex) => (
+              <div 
+                className="option-row draggable-option" 
+                key={letter}
+                draggable
+                onDragStart={(e) => handleDragStart(e, qIndex, optIndex)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, qIndex, optIndex)}
+              >
+                <div className="drag-handle"><GripVertical size={16} /></div>
+                <input
+                  type="radio"
+                  name={`correct-${qIndex}`}
+                  checked={q.correctOption === letter}
+                  onChange={() => updateQuestion(qIndex, { correctOption: letter })}
+                  title="Mark as correct answer"
+                  className="correct-radio"
+                />
+                <input
+                  type="text"
+                  className="base-input"
+                  placeholder={`Option ${letter}`}
+                  value={q.options[optIndex]}
+                  onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
+                  style={{ 
+                    borderColor: q.correctOption === letter ? 'var(--correct)' : 'var(--panel-border)',
+                    boxShadow: q.correctOption === letter ? '0 0 0 1px var(--correct)' : 'none'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
 
           <div className="field" style={{ marginTop: 16 }}>
             <label>Time limit (seconds)</label>

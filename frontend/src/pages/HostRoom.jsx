@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { socket } from '../socket'
+import { QRCodeCanvas } from 'qrcode.react'
 
 function HostRoom() {
   const { roomCode } = useParams()
@@ -63,15 +64,25 @@ function HostRoom() {
   const nextQuestion = () => socket.emit('host:nextQuestion', { roomCode })
 
   const totalVotes = Object.values(optionCounts).reduce((a, b) => a + b, 0);
+  const joinUrl = `${window.location.origin}/join?code=${roomCode}`;
 
   return (
     <div className="app wide">
       {phase === 'lobby' && (
-        <div className="panel room-code-display">
-          <p className="center-text">Share this code with participants</p>
-          <div className="room-code-big">{roomCode}</div>
-          <div className="stat-inline" style={{ marginTop: 20 }}>
-            <div className="stat-inline-item">
+        <div className="panel room-code-display" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '40px' }}>
+          <div>
+            <p className="center-text">Share this code with participants</p>
+            <div className="room-code-big">{roomCode}</div>
+            <p className="center-text" style={{ fontSize: 13, wordBreak: 'break-all' }}>{joinUrl}</p>
+          </div>
+          
+          <div style={{ background: 'white', padding: '16px', borderRadius: '12px' }}>
+            <QRCodeCanvas value={joinUrl} size={150} />
+          </div>
+
+          <div style={{ width: '100%', maxWidth: '300px' }}>
+            <div className="stat-inline" style={{ marginTop: 0 }}>
+              <div className="stat-inline-item" style={{ flex: 1 }}>
               <div className="stat-inline-value">{participantCount}</div>
               <div className="stat-inline-label">Joined</div>
             </div>

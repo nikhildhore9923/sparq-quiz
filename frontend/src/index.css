@@ -658,3 +658,73 @@ body {
   .panel { padding: 20px; }
   .stat-inline { gap: 16px; }
 }
+
+/* ---------- Game Mode Cards ---------- */
+.mode-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mode-card {
+  display: flex;
+  align-items: center;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mode-card:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.mode-card.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.mode-card-icon {
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.mode-card-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.mode-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ---------- Drag and Drop Options ---------- */
+.draggable-option {
+  cursor: grab;
+  transition: background-color 0.2s;
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+
+.draggable-option:active {
+  cursor: grabbing;
+  background-color: var(--bg-secondary);
+}
+
+.drag-handle {
+  color: var(--text-secondary);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}

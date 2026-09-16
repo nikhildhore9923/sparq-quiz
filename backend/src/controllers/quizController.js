@@ -72,14 +72,16 @@ exports.getQuizStatus = (req, res) => {
 };
 
 exports.generateQuestions = async (req, res) => {
-  const { topic } = req.body;
+  const { topic, numQuestions = 5 } = req.body;
   if (!topic) return res.status(400).json({ success: false, error: "Topic is required" });
+  
+  const count = Math.min(Math.max(parseInt(numQuestions) || 5, 1), 20);
 
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (apiKey) {
     try {
-      const prompt = `Generate exactly 5 multiple choice trivia questions about "${topic}".
+      const prompt = `Generate exactly ${count} multiple choice trivia questions about "${topic}".
 Return ONLY a valid JSON array of objects. Do not include markdown formatting, backticks, or any other text.
 Each object in the array must have exactly these keys:
 - questionText (string, the trivia question)
@@ -113,41 +115,72 @@ Each object in the array must have exactly these keys:
     }
   }
 
-  // Mock Fallback (used if no API key or if API fails)
-  const mockQuestions = [
-    {
-      questionText: `What is the core concept of ${topic}?`,
-      options: ["The beginning", "The middle", "The end", "The core itself"],
-      correctOption: "D",
-      timeLimit: 20
-    },
-    {
-      questionText: `Who invented ${topic}?`,
-      options: ["Albert Einstein", "Marie Curie", "John Doe", "Jane Smith"],
-      correctOption: "C",
-      timeLimit: 20
-    },
-    {
-      questionText: `Why is ${topic} important?`,
-      options: ["It saves time", "It is fun", "It is complex", "All of the above"],
-      correctOption: "A",
-      timeLimit: 20
-    },
-    {
-      questionText: `Which of these is NOT related to ${topic}?`,
-      options: ["Apples", "Oranges", "Bananas", "Grapes"],
-      correctOption: "B",
-      timeLimit: 20
-    },
-    {
-      questionText: `When was ${topic} first discovered?`,
-      options: ["1990", "2000", "2010", "2020"],
-      correctOption: "B",
-      timeLimit: 20
-    }
-  ];
+  // Mock Fallback
+  const mockQuestions = Array.from({ length: count }).map((_, i) => ({
+    questionText: `Mock Question ${i + 1} about ${topic}?`,
+    options: ["Option A", "Option B", "Option C", "Option D"],
+    correctOption: "A",
+    timeLimit: 20
+  }));
 
   setTimeout(() => {
     res.json({ success: true, questions: mockQuestions });
   }, 1000);
+};
+
+exports.saveToBank = (req, res) => {
+  try {
+    const { title, questions } = req.body;
+    if (!title || !questions || questions.length === 0) {
+      return res.status(400).json({ success: false, error: "Title and questions are required" });
+    }
+
+    const saveQuiz = db.transaction(() => {
+      const quizInsert = db.prepare("INSERT INTO saved_quizzes (title) VALUES (?)").run(title);
+      const quizId = quizInsert.lastInsertRowid;
+      
+      const insertQuestion = db.prepare(`
+        INSERT INTO saved_questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, time_limit_seconds)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      questions.forEach(q => {
+        insertQuestion.run(
+          quizId, q.questionText, q.options[0], q.options[1], q.options[2], q.options[3], q.correctOption, q.timeLimit || 20
+        );
+      });
+      return quizId;
+    });
+
+    const quizId = saveQuiz();
+    res.json({ success: true, quizId });
+  } catch (error) {
+    console.error("Error saving to bank:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+exports.loadFromBank = (req, res) => {
+  try {
+    const quizzes = db.prepare("SELECT id, title, created_at FROM saved_quizzes ORDER BY created_at DESC").all();
+    
+    const formattedQuizzes = quizzes.map(q => {
+      const questions = db.prepare("SELECT * FROM saved_questions WHERE quiz_id = ?").all(q.id);
+      return {
+        id: q.id,
+        title: q.title,
+        questions: questions.map(sq => ({
+          questionText: sq.question_text,
+          options: [sq.option_a, sq.option_b, sq.option_c, sq.option_d],
+          correctOption: sq.correct_option,
+          timeLimit: sq.time_limit_seconds
+        }))
+      };
+    });
+
+    res.json({ success: true, quizzes: formattedQuizzes });
+  } catch (error) {
+    console.error("Error loading from bank:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
 };

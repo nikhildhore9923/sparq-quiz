@@ -58,6 +58,25 @@ db.exec(`
     FOREIGN KEY (question_id) REFERENCES questions(id),
     FOREIGN KEY (participant_id) REFERENCES participants(id)
   );
+
+  CREATE TABLE IF NOT EXISTS saved_quizzes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS saved_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL,
+    question_text TEXT NOT NULL,
+    option_a TEXT NOT NULL,
+    option_b TEXT NOT NULL,
+    option_c TEXT NOT NULL,
+    option_d TEXT NOT NULL,
+    correct_option TEXT NOT NULL,
+    time_limit_seconds INTEGER NOT NULL DEFAULT 20,
+    FOREIGN KEY (quiz_id) REFERENCES saved_quizzes(id)
+  );
 `);
 
 // Graceful migrations for existing deployed databases

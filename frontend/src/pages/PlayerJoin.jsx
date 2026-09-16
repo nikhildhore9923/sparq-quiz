@@ -1,14 +1,24 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { socket } from '../socket'
 
 function PlayerJoin() {
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const [roomCode, setRoomCode] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [joining, setJoining] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const codeFromUrl = params.get('code')
+    if (codeFromUrl) {
+      setRoomCode(codeFromUrl.toUpperCase())
+    }
+  }, [location])
 
   const handleJoin = () => {
     setError('')
