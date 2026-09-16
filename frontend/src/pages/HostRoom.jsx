@@ -8,6 +8,7 @@ function HostRoom() {
   const [participantCount, setParticipantCount] = useState(0)
   const [question, setQuestion] = useState(null)
   const [optionCounts, setOptionCounts] = useState({ A: 0, B: 0, C: 0, D: 0 })
+  const [globalAccuracy, setGlobalAccuracy] = useState(0)
   const [questionResult, setQuestionResult] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
   const [finalStats, setFinalStats] = useState(null)
@@ -25,10 +26,14 @@ function HostRoom() {
       setQuestion(q)
       setQuestionResult(null)
       setOptionCounts({ A: 0, B: 0, C: 0, D: 0 })
+      setGlobalAccuracy(0)
       setPhase('question')
     })
 
-    socket.on('results:tally', ({ optionCounts }) => setOptionCounts(optionCounts))
+    socket.on('results:tally', ({ optionCounts, globalAccuracy }) => {
+      setOptionCounts(optionCounts)
+      if (globalAccuracy !== undefined) setGlobalAccuracy(globalAccuracy)
+    })
 
     socket.on('question:ended', (result) => {
       setQuestionResult(result)
@@ -84,10 +89,17 @@ function HostRoom() {
 
       {phase === 'question' && question && (
         <div className="panel">
-          <p className="center-text">
-            Question {question.questionNumber} of {question.totalQuestions}
-          </p>
-          <div className="question-live-text">{question.questionText}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p className="center-text" style={{ margin: 0 }}>
+              Question {question.questionNumber} of {question.totalQuestions}
+            </p>
+            {question.mode && (
+              <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 100, backgroundColor: 'var(--accent-light)', color: 'var(--accent)', fontWeight: 'bold' }}>
+                {question.mode} Mode
+              </span>
+            )}
+          </div>
+          <div className="question-live-text" style={{ marginTop: 16 }}>{question.questionText}</div>
 
           {['A', 'B', 'C', 'D'].map((letter) => (
             <div className="tally-row" key={letter}>
@@ -101,7 +113,14 @@ function HostRoom() {
               <span className="tally-count">{optionCounts[letter]}</span>
             </div>
           ))}
-          <p className="center-text" style={{ marginTop: 12 }}>{totalVotes} answer(s) submitted</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+            <p className="center-text">{totalVotes} answer(s) submitted</p>
+            {totalVotes > 0 && (
+              <p className="center-text" style={{ color: 'var(--correct)', fontWeight: 'bold' }}>
+                Live Accuracy: {globalAccuracy}%
+              </p>
+            )}
+          </div>
         </div>
       )}
 

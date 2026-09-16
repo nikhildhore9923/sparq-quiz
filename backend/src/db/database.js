@@ -12,6 +12,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code TEXT UNIQUE NOT NULL,
     host_name TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'Classic', -- Classic | Rapid Fire | Survival
     status TEXT NOT NULL DEFAULT 'WAITING', -- WAITING | STARTING | QUESTION_ACTIVE | QUESTION_ENDED | FINISHED
     current_question_index INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -39,6 +40,7 @@ db.exec(`
     score INTEGER DEFAULT 0,
     streak INTEGER DEFAULT 0,
     connected INTEGER DEFAULT 1,
+    eliminated INTEGER DEFAULT 0,
     joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (room_id) REFERENCES rooms(id)
   );
@@ -61,9 +63,13 @@ db.exec(`
 // Graceful migrations for existing deployed databases
 try {
   db.prepare("ALTER TABLE participants ADD COLUMN streak INTEGER DEFAULT 0").run();
-} catch (e) {
-  // column might already exist
-}
+} catch (e) {}
+try {
+  db.prepare("ALTER TABLE rooms ADD COLUMN mode TEXT DEFAULT 'Classic'").run();
+} catch (e) {}
+try {
+  db.prepare("ALTER TABLE participants ADD COLUMN eliminated INTEGER DEFAULT 0").run();
+} catch (e) {}
 
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1

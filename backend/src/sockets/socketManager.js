@@ -25,7 +25,12 @@ function setupSocketIO(io) {
     const questions = getQuestionsForRoom(room.id);
     const question = questions[room.current_question_index];
 
-    const timeLimitMs = question.time_limit_seconds * 1000;
+    let timeLimitSeconds = question.time_limit_seconds;
+    if (room.mode === 'Rapid Fire') {
+      timeLimitSeconds = Math.max(5, Math.floor(timeLimitSeconds / 2));
+    }
+
+    const timeLimitMs = timeLimitSeconds * 1000;
     const startTime = Date.now();
     const deadline = startTime + timeLimitMs;
 
@@ -33,7 +38,7 @@ function setupSocketIO(io) {
 
     activeRooms.set(roomCode, {
       ...activeRooms.get(roomCode),
-      currentQuestion: { id: question.id, startTime, deadline, timeLimitSeconds: question.time_limit_seconds },
+      currentQuestion: { id: question.id, startTime, deadline, timeLimitSeconds },
       optionCounts: { A: 0, B: 0, C: 0, D: 0 },
     });
 
@@ -49,6 +54,7 @@ function setupSocketIO(io) {
       deadline,
       questionNumber: room.current_question_index + 1,
       totalQuestions: questions.length,
+      mode: room.mode,
     });
 
     const timerHandle = setTimeout(() => endQuestion(roomCode), timeLimitMs + 300);
@@ -147,7 +153,7 @@ function setupSocketIO(io) {
         activeRooms.set(roomCode, { ...state, hostSocketId: socket.id });
       }
       
-      ack({ ok: true, status: room.status });
+      ack({ ok: true, status: room.status, mode: room.mode });
     });
 
     socket.on("host:startQuiz", ({ roomCode }) => {
@@ -224,6 +230,7 @@ function setupSocketIO(io) {
         ok: true,
         name: participant.name,
         score: participant.score,
+        eliminated: participant.eliminated === 1,
         roomStatus: room.status,
         currentQuestion: state?.currentQuestion || null,
       });
@@ -245,19 +252,24 @@ function setupSocketIO(io) {
         return ack({ error: "Time's up." });
       }
 
+      const participant = db.prepare("SELECT streak, eliminated FROM participants WHERE id = ?").get(participantId);
+      if (participant.eliminated) {
+        return ack({ error: "You have been eliminated from this Survival game!" });
+      }
+
       const alreadyAnswered = db
         .prepare("SELECT id FROM answers WHERE question_id = ? AND participant_id = ?")
         .get(questionId, participantId);
       if (alreadyAnswered) return ack({ error: "You already answered this question." });
 
       const question = db.prepare("SELECT * FROM questions WHERE id = ?").get(questionId);
-      const participant = db.prepare("SELECT streak FROM participants WHERE id = ?").get(participantId);
       
       const responseTimeMs = Date.now() - state.currentQuestion.startTime;
       const isCorrect = selectedOption === question.correct_option;
 
       let points = 0;
       let currentStreak = participant.streak || 0;
+      let newlyEliminated = 0;
 
       if (isCorrect) {
         currentStreak += 1;
@@ -270,6 +282,9 @@ function setupSocketIO(io) {
         points = Math.round(basePoints * multiplier);
       } else {
         currentStreak = 0; // Reset streak on wrong answer
+        if (room.mode === 'Survival') {
+          newlyEliminated = 1;
+        }
       }
 
       db.prepare(`
@@ -277,13 +292,21 @@ function setupSocketIO(io) {
         VALUES ((SELECT room_id FROM questions WHERE id = ?), ?, ?, ?, ?, ?, ?)
       `).run(questionId, questionId, participantId, selectedOption, isCorrect ? 1 : 0, responseTimeMs, points);
 
-      db.prepare("UPDATE participants SET score = score + ?, streak = ? WHERE id = ?").run(points, currentStreak, participantId);
+      db.prepare("UPDATE participants SET score = score + ?, streak = ?, eliminated = ? WHERE id = ?").run(points, currentStreak, newlyEliminated, participantId);
 
       if (selectedOption in state.optionCounts) state.optionCounts[selectedOption]++;
 
-      io.to(roomCode).emit("results:tally", { optionCounts: state.optionCounts });
+      // Calculate Real-Time Host Analytics: Global Accuracy
+      const totalAnswersSoFar = state.optionCounts.A + state.optionCounts.B + state.optionCounts.C + state.optionCounts.D;
+      const correctCount = state.optionCounts[question.correct_option];
+      const globalAccuracy = totalAnswersSoFar > 0 ? Math.round((correctCount / totalAnswersSoFar) * 100) : 0;
 
-      ack({ ok: true, isCorrect, points, streak: currentStreak });
+      io.to(roomCode).emit("results:tally", { 
+        optionCounts: state.optionCounts,
+        globalAccuracy 
+      });
+
+      ack({ ok: true, isCorrect, points, streak: currentStreak, eliminated: newlyEliminated === 1 });
     });
 
     socket.on("disconnect", () => {

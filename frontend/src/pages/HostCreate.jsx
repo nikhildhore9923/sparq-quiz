@@ -12,9 +12,35 @@ const emptyQuestion = () => ({
 function HostCreate() {
   const navigate = useNavigate()
   const [hostName, setHostName] = useState('')
+  const [mode, setMode] = useState('Classic')
+  const [topic, setTopic] = useState('')
+  const [generating, setGenerating] = useState(false)
   const [questions, setQuestions] = useState([emptyQuestion()])
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+
+  const handleGenerate = async () => {
+    if (!topic.trim()) return setError('Enter a topic to generate questions.')
+    setError('')
+    setGenerating(true)
+    try {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+      const res = await fetch(`${serverUrl}/api/quiz/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic })
+      })
+      const data = await res.json()
+      if (data.success && data.questions) {
+        setQuestions(data.questions)
+      } else {
+        setError(data.error || 'Failed to generate questions')
+      }
+    } catch (err) {
+      setError('Could not connect to AI generator')
+    }
+    setGenerating(false)
+  }
 
   const updateQuestion = (index, patch) => {
     setQuestions((prev) => prev.map((q, i) => (i === index ? { ...q, ...patch } : q)))
@@ -55,7 +81,7 @@ function HostCreate() {
       const res = await fetch(`${serverUrl}/api/quiz/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostName, questions: formattedQuestions })
+        body: JSON.stringify({ hostName, mode, questions: formattedQuestions })
       })
       const data = await res.json()
       
@@ -75,11 +101,32 @@ function HostCreate() {
 
   return (
     <div className="app wide">
-      <div className="panel">
-        <h2 className="panel-title">Quiz Details</h2>
-        <div className="field">
-          <label>Your Name (shown to participants)</label>
-          <input value={hostName} onChange={(e) => setHostName(e.target.value)} placeholder="e.g. Nikhil" />
+      <div className="panel" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 300px' }}>
+          <h2 className="panel-title">Quiz Details</h2>
+          <div className="field">
+            <label>Your Name (shown to participants)</label>
+            <input value={hostName} onChange={(e) => setHostName(e.target.value)} placeholder="e.g. Nikhil" className="base-input" />
+          </div>
+          <div className="field">
+            <label>Game Mode</label>
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="base-input">
+              <option value="Classic">Classic (Standard rules)</option>
+              <option value="Rapid Fire">Rapid Fire (Half time limits)</option>
+              <option value="Survival">Survival (1 wrong = eliminated)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ flex: '1 1 300px', background: 'var(--bg-secondary)', padding: '20px', borderRadius: 'var(--radius-md)' }}>
+          <h3 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>✨ Auto-Generate with AI</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Type a topic and let our mock AI instantly generate 5 questions for you!</p>
+          <div className="field" style={{ display: 'flex', gap: '8px' }}>
+            <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. JavaScript Basics" className="base-input" />
+            <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
+              {generating ? '...' : 'Generate'}
+            </button>
+          </div>
         </div>
       </div>
 
