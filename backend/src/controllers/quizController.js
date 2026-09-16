@@ -184,3 +184,13 @@ exports.loadFromBank = (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+exports.getGlobalLeaderboard = (req, res) => {
+  try {
+    const topParticipants = db.prepare("SELECT name, score FROM participants ORDER BY score DESC LIMIT 10").all();
+    res.json({ success: true, leaderboard: topParticipants });
+  } catch (error) {
+    console.error("Leaderboard Error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch leaderboard" });
+  }
+};
