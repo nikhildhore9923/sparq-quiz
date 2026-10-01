@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import HostCreate from './pages/HostCreate'
 import HostRoom from './pages/HostRoom'
 import PlayerJoin from './pages/PlayerJoin'
+import PlayerRoom from './pages/PlayerRoom'
 import Login from './pages/Login'
 import { Zap, LogOut, LogIn } from 'lucide-react'
 
@@ -52,6 +53,7 @@ function App() {
           <Route path="/host" element={<HostCreate />} />
           <Route path="/host/:roomCode" element={<HostRoom />} />
           <Route path="/join" element={<PlayerJoin />} />
+          <Route path="/play/:roomCode" element={<PlayerRoom />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>
