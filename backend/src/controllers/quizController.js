@@ -72,13 +72,32 @@ exports.getQuizStatus = (req, res) => {
 };
 
 exports.generateQuestions = async (req, res) => {
-  const { topic, numQuestions = 5 } = req.body;
+  const { topic, numQuestions = 5, globalTimeLimit = 20 } = req.body;
   if (!topic) return res.status(400).json({ success: false, error: "Topic is required" });
   
-  // Removed the max limit of 20
   const count = Math.max(parseInt(numQuestions) || 5, 1);
-
+  const timeLimit = parseInt(globalTimeLimit) || 20;
   const apiKey = process.env.GROQ_API_KEY;
+
+  const shuffleOptions = (options, correctOptionStr) => {
+    const correctIndex = ['A', 'B', 'C', 'D'].indexOf(correctOptionStr);
+    const correctText = options[correctIndex];
+    
+    // Create an array of objects to shuffle
+    let mapped = options.map((opt, i) => ({ text: opt, isCorrect: i === correctIndex }));
+    
+    // Fisher-Yates shuffle
+    for (let i = mapped.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [mapped[i], mapped[j]] = [mapped[j], mapped[i]];
+    }
+    
+    const newCorrectIndex = mapped.findIndex(m => m.isCorrect);
+    return {
+      options: mapped.map(m => m.text),
+      correctOption: ['A', 'B', 'C', 'D'][newCorrectIndex]
+    };
+  };
 
   if (apiKey) {
     try {
@@ -88,7 +107,7 @@ Each object in the array must have exactly these keys:
 - questionText (string, the trivia question)
 - options (array of exactly 4 strings, the possible answers)
 - correctOption (string, exactly "A", "B", "C", or "D")
-- timeLimit (number, exactly 20)`;
+- timeLimit (number, exactly ${timeLimit})`;
 
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -110,7 +129,17 @@ Each object in the array must have exactly these keys:
       const jsonString = data.choices[0].message.content;
       const result = JSON.parse(jsonString);
       
-      return res.json({ success: true, questions: result.questions });
+      const shuffledQuestions = result.questions.map(q => {
+        const shuffled = shuffleOptions(q.options, q.correctOption);
+        return {
+          ...q,
+          options: shuffled.options,
+          correctOption: shuffled.correctOption,
+          timeLimit: timeLimit
+        };
+      });
+
+      return res.json({ success: true, questions: shuffledQuestions });
     } catch (error) {
       console.error("Groq API Error:", error);
       console.log("Falling back to mock questions...");
@@ -118,12 +147,15 @@ Each object in the array must have exactly these keys:
   }
 
   // Mock Fallback
-  const mockQuestions = Array.from({ length: count }).map((_, i) => ({
-    questionText: `Mock Question ${i + 1} about ${topic}?`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctOption: "A",
-    timeLimit: 20
-  }));
+  const mockQuestions = Array.from({ length: count }).map((_, i) => {
+    const shuffled = shuffleOptions(["Option A (Correct)", "Option B", "Option C", "Option D"], "A");
+    return {
+      questionText: `Mock Question ${i + 1} about ${topic}?`,
+      options: shuffled.options,
+      correctOption: shuffled.correctOption,
+      timeLimit: timeLimit
+    };
+  });
 
   setTimeout(() => {
     res.json({ success: true, questions: mockQuestions });

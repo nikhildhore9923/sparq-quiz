@@ -423,11 +423,13 @@ body {
   align-items: center;
 }
 
-.option-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-light);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .option-btn:disabled {
@@ -753,6 +755,7 @@ body {
   from { transform: translateY(20px) scale(0.95); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
+
 
 
 

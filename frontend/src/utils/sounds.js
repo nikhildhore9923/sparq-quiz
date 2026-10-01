@@ -31,3 +31,15 @@ export const playEndSound = () => {
   playTone(300, 'sawtooth', 0.5, 0.1);
   setTimeout(() => playTone(200, 'sawtooth', 0.8, 0.1), 200);
 };
+
+// Unlock AudioContext on first user interaction for mobile devices
+const unlockAudioContext = () => {
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  document.removeEventListener('touchstart', unlockAudioContext);
+  document.removeEventListener('click', unlockAudioContext);
+};
+document.addEventListener('touchstart', unlockAudioContext);
+document.addEventListener('click', unlockAudioContext);
+

@@ -17,6 +17,7 @@ function HostCreate() {
   const [mode, setMode] = useState('Classic')
   const [topic, setTopic] = useState('')
   const [numQuestions, setNumQuestions] = useState(5)
+  const [globalTimeLimit, setGlobalTimeLimit] = useState(20)
   const [generating, setGenerating] = useState(false)
   const [questions, setQuestions] = useState([emptyQuestion()])
   const [error, setError] = useState('')
@@ -104,7 +105,7 @@ function HostCreate() {
       const res = await fetch(`${serverUrl}/api/quiz/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, numQuestions })
+        body: JSON.stringify({ topic, numQuestions, globalTimeLimit })
       })
       const data = await res.json()
       if (data.success && data.questions) {
@@ -282,6 +283,10 @@ function HostCreate() {
           <div className="field">
             <label>Topic</label>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. JavaScript Basics" className="base-input" />
+          </div>
+          <div className="field">
+            <label>Time per question (seconds)</label>
+            <input type="number" min="5" max="120" value={globalTimeLimit} onChange={(e) => setGlobalTimeLimit(e.target.value)} className="base-input" />
           </div>
           <div className="field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
