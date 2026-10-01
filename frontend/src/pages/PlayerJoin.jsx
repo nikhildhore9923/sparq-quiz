@@ -37,6 +37,13 @@ function PlayerJoin() {
 
   return (
     <div className="app">
+      <button 
+        className="btn btn-ghost" 
+        onClick={() => navigate('/')} 
+        style={{ marginBottom: 16, padding: '8px 0', color: 'var(--text-secondary)' }}
+      >
+        ← Back to Home
+      </button>
       <div className="panel">
         <h2 className="panel-title" style={{ textAlign: 'center', fontSize: 24, marginBottom: 32 }}>Join a Live Quiz</h2>
         <div className="field">

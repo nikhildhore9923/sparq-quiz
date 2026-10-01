@@ -220,6 +220,14 @@ function HostCreate() {
 
   return (
     <div className="app wide">
+      <button 
+        className="btn btn-ghost" 
+        onClick={() => navigate('/')} 
+        style={{ marginBottom: 16, padding: '8px 0', color: 'var(--text-secondary)' }}
+      >
+        ← Back to Home
+      </button>
+
       {/* Quiz Bank Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontFamily: 'var(--font-display)' }}>Create Quiz</h1>

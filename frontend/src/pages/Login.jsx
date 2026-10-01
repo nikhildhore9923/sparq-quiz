@@ -44,6 +44,13 @@ function Login() {
 
   return (
     <div className="app slide-in">
+      <button 
+        className="btn btn-ghost" 
+        onClick={() => navigate('/')} 
+        style={{ marginBottom: 16, padding: '8px 0', color: 'var(--text-secondary)' }}
+      >
+        ← Back to Home
+      </button>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, marginBottom: 8, color: 'var(--accent)' }}>
           Sparq Security
