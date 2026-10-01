@@ -75,42 +75,44 @@ exports.generateQuestions = async (req, res) => {
   const { topic, numQuestions = 5 } = req.body;
   if (!topic) return res.status(400).json({ success: false, error: "Topic is required" });
   
-  const count = Math.min(Math.max(parseInt(numQuestions) || 5, 1), 20);
+  // Removed the max limit of 20
+  const count = Math.max(parseInt(numQuestions) || 5, 1);
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (apiKey) {
     try {
       const prompt = `Generate exactly ${count} multiple choice trivia questions about "${topic}".
-Return ONLY a valid JSON array of objects. Do not include markdown formatting, backticks, or any other text.
+Output ONLY valid JSON. The JSON must be an object containing a single key "questions" which is an array of objects.
 Each object in the array must have exactly these keys:
 - questionText (string, the trivia question)
 - options (array of exactly 4 strings, the possible answers)
 - correctOption (string, exactly "A", "B", "C", or "D")
 - timeLimit (number, exactly 20)`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.7
-          }
+          model: "llama3-8b-8192",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.7
         })
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Gemini API Error");
+      if (!response.ok) throw new Error(data.error?.message || "Groq API Error");
 
-      const text = data.candidates[0].content.parts[0].text;
-      const questions = JSON.parse(text);
+      const jsonString = data.choices[0].message.content;
+      const result = JSON.parse(jsonString);
       
-      return res.json({ success: true, questions });
+      return res.json({ success: true, questions: result.questions });
     } catch (error) {
-      console.error("Gemini API Error:", error);
-      // Fall through to mock if it fails
+      console.error("Groq API Error:", error);
       console.log("Falling back to mock questions...");
     }
   }

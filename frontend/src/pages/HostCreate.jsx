@@ -265,8 +265,8 @@ function HostCreate() {
           </div>
           <div className="field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <label>Count (Max 20)</label>
-              <input type="number" min="1" max="20" value={numQuestions} onChange={(e) => setNumQuestions(e.target.value)} className="base-input" />
+              <label>Count</label>
+              <input type="number" min="1" value={numQuestions} onChange={(e) => setNumQuestions(e.target.value)} className="base-input" />
             </div>
             <button className="btn btn-primary" onClick={handleGenerate} disabled={generating} style={{ height: '49px' }}>
               {generating ? 'Generating...' : 'Generate'}
