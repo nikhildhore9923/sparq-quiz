@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PlusCircle, Trash2, ArrowRight, Save, Download, GripVertical } from 'lucide-react'
+import { AuthContext } from '../AuthContext'
+import { PlusCircle, Trash2, ArrowRight, Save, Download, GripVertical, AlertTriangle } from 'lucide-react'
 
 const emptyQuestion = () => ({
   questionText: '',
@@ -11,7 +12,8 @@ const emptyQuestion = () => ({
 
 function HostCreate() {
   const navigate = useNavigate()
-  const [hostName, setHostName] = useState('')
+  const { token, username } = useContext(AuthContext)
+  const [hostName, setHostName] = useState(username || '')
   const [mode, setMode] = useState('Classic')
   const [topic, setTopic] = useState('')
   const [numQuestions, setNumQuestions] = useState(5)
@@ -32,9 +34,12 @@ function HostCreate() {
   }, [])
 
   const fetchSavedQuizzes = async () => {
+    if (!token) return; // Must be logged in
     try {
       const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
-      const res = await fetch(`${serverUrl}/api/quiz/bank/load`)
+      const res = await fetch(`${serverUrl}/api/quiz/bank/load`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const data = await res.json()
       if (data.success) setSavedQuizzes(data.quizzes)
     } catch (e) {
@@ -43,6 +48,10 @@ function HostCreate() {
   }
 
   const handleSaveToBank = () => {
+    if (!token) {
+      setModalConfig({ isOpen: true, type: 'alert', title: 'You must be logged in to save to your Bank!', onConfirm: null })
+      return;
+    }
     setModalConfig({
       isOpen: true,
       type: 'prompt',
@@ -54,7 +63,10 @@ function HostCreate() {
           const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
           const res = await fetch(`${serverUrl}/api/quiz/bank/save`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            },
             body: JSON.stringify({ title, questions })
           })
           const data = await res.json()

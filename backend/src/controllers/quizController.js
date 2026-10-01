@@ -137,8 +137,10 @@ exports.saveToBank = (req, res) => {
       return res.status(400).json({ success: false, error: "Title and questions are required" });
     }
 
+    const userId = req.user.id;
+
     const saveQuiz = db.transaction(() => {
-      const quizInsert = db.prepare("INSERT INTO saved_quizzes (title) VALUES (?)").run(title);
+      const quizInsert = db.prepare("INSERT INTO saved_quizzes (title, user_id) VALUES (?, ?)").run(title, userId);
       const quizId = quizInsert.lastInsertRowid;
       
       const insertQuestion = db.prepare(`
@@ -164,7 +166,8 @@ exports.saveToBank = (req, res) => {
 
 exports.loadFromBank = (req, res) => {
   try {
-    const quizzes = db.prepare("SELECT id, title, created_at FROM saved_quizzes ORDER BY created_at DESC").all();
+    const userId = req.user.id;
+    const quizzes = db.prepare("SELECT id, title, created_at FROM saved_quizzes WHERE user_id = ? ORDER BY created_at DESC").all(userId);
     
     const formattedQuizzes = quizzes.map(q => {
       const questions = db.prepare("SELECT * FROM saved_questions WHERE quiz_id = ?").all(q.id);

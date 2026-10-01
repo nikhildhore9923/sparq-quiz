@@ -19,6 +19,7 @@ const PORT = process.env.PORT || 4000;
 
 // Routes
 app.get("/health", (req, res) => res.json({ status: "Quiz server is running cleanly" }));
+app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/quiz", quizRoutes);
 
 // Socket.io initialization

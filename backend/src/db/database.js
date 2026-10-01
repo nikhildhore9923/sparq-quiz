@@ -62,7 +62,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS saved_quizzes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    user_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
   CREATE TABLE IF NOT EXISTS saved_questions (
@@ -77,6 +79,13 @@ db.exec(`
     time_limit_seconds INTEGER NOT NULL DEFAULT 20,
     FOREIGN KEY (quiz_id) REFERENCES saved_quizzes(id)
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Graceful migrations for existing deployed databases
@@ -88,6 +97,9 @@ try {
 } catch (e) {}
 try {
   db.prepare("ALTER TABLE participants ADD COLUMN eliminated INTEGER DEFAULT 0").run();
+} catch (e) {}
+try {
+  db.prepare("ALTER TABLE saved_quizzes ADD COLUMN user_id INTEGER").run();
 } catch (e) {}
 
 function generateRoomCode() {

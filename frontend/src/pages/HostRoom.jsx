@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { socket } from '../socket'
 import { QRCodeCanvas } from 'qrcode.react'
+import { playJoinSound, playTickSound, playEndSound } from '../utils/sounds'
 
 function HostRoom() {
   const { roomCode } = useParams()
@@ -19,9 +20,20 @@ function HostRoom() {
     // so we keep receiving broadcasts for it.
     socket.emit('host:joinRoom', { roomCode }, () => {})
 
-    socket.on('lobby:update', ({ participantCount }) => setParticipantCount(participantCount))
+    socket.on('participantJoined', (data) => {
+      setParticipantCount(data.count)
+      playJoinSound()
+    })
 
-    socket.on('quiz:started', () => setPhase('question'))
+    socket.on('lobby:update', ({ participantCount }) => {
+      setParticipantCount(participantCount)
+      playJoinSound()
+    })
+
+    socket.on('quiz:started', () => {
+      setPhase('question')
+      playTickSound()
+    })
 
     socket.on('question:show', (q) => {
       setQuestion(q)
@@ -29,6 +41,7 @@ function HostRoom() {
       setOptionCounts({ A: 0, B: 0, C: 0, D: 0 })
       setGlobalAccuracy(0)
       setPhase('question')
+      playTickSound()
     })
 
     socket.on('results:tally', ({ optionCounts, globalAccuracy }) => {
@@ -39,6 +52,7 @@ function HostRoom() {
     socket.on('question:ended', (result) => {
       setQuestionResult(result)
       setPhase('ended')
+      playTickSound()
     })
 
     socket.on('leaderboard:update', ({ leaderboard }) => setLeaderboard(leaderboard))
@@ -47,9 +61,11 @@ function HostRoom() {
       setLeaderboard(finalLeaderboard)
       setFinalStats(perQuestionStats)
       setPhase('finished')
+      playEndSound()
     })
 
     return () => {
+      socket.off('participantJoined')
       socket.off('lobby:update')
       socket.off('quiz:started')
       socket.off('question:show')
