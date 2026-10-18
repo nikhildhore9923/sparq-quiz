@@ -1,37 +1,60 @@
-const { db, generateRoomCode } = require('../db/database');
+const { db, generateRoomCode, generateToken } = require('../db/database');
 const { z } = require('zod');
 
-// Validation schema for creating a quiz
+// Validation schema for creating a live quiz room
 const createQuizSchema = z.object({
-  hostName: z.string().min(1, "Host name is required"),
+  hostName: z.string().trim().min(1, "Host name is required").max(50, "Host name too long"),
   mode: z.enum(['Classic', 'Rapid Fire', 'Survival']).default('Classic'),
   questions: z.array(
     z.object({
-      questionText: z.string().min(1, "Question text is required"),
-      options: z.array(z.string()).length(4, "Must provide exactly 4 options"),
+      questionText: z.string().trim().min(1, "Question text is required").max(500, "Question text too long"),
+      options: z.array(z.string().trim().min(1, "Option text required").max(200, "Option too long")).length(4, "Must provide exactly 4 options"),
       correctOption: z.enum(['A', 'B', 'C', 'D']),
-      timeLimit: z.number().min(5).max(120).default(20),
+      timeLimit: z.coerce.number().int().min(5).max(120).default(20),
     })
-  ).min(1, "At least one question is required")
+  ).min(1, "At least one question is required").max(100, "Maximum 100 questions per quiz")
+});
+
+// Validation schema for saving to private Quiz Bank
+const saveToBankSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(100, "Title must be 100 characters or fewer"),
+  questions: z.array(
+    z.object({
+      questionText: z.string().trim().min(1, "Question text is required").max(500),
+      options: z.array(z.string().trim().min(1, "Option text required").max(200)).length(4),
+      correctOption: z.enum(['A', 'B', 'C', 'D']),
+      timeLimit: z.coerce.number().int().min(5).max(120).default(20),
+    })
+  ).min(1, "At least one question is required").max(100)
+});
+
+// Validation schema for AI generation
+const generateQuestionsSchema = z.object({
+  topic: z.string().trim().min(1, "Topic is required").max(100, "Topic must be 100 characters or fewer"),
+  numQuestions: z.coerce.number().int().min(1, "Minimum 1 question").max(50, "Maximum 50 questions per AI request").default(5),
+  globalTimeLimit: z.coerce.number().int().min(5).max(120).default(20),
 });
 
 exports.createQuiz = (req, res) => {
   try {
     const validatedData = createQuizSchema.parse(req.body);
     const { hostName, mode, questions } = validatedData;
-    
+
     const code = generateRoomCode();
-    
-    // We use a transaction to ensure both room and questions are saved together
+    const hostToken = generateToken();
+
+    // We use a transaction to ensure both room and questions are saved atomically
     const insertQuiz = db.transaction(() => {
-      const roomInsert = db.prepare("INSERT INTO rooms (code, host_name, mode, status) VALUES (?, ?, ?, 'WAITING')").run(code, hostName, mode);
+      const roomInsert = db.prepare(
+        "INSERT INTO rooms (code, host_name, mode, status, host_token) VALUES (?, ?, ?, 'WAITING', ?)"
+      ).run(code, hostName, mode, hostToken);
       const roomId = roomInsert.lastInsertRowid;
-      
+
       const insertQuestion = db.prepare(`
         INSERT INTO questions (room_id, question_text, option_a, option_b, option_c, option_d, correct_option, time_limit_seconds, order_index)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      
+
       questions.forEach((q, i) => {
         insertQuestion.run(
           roomId,
@@ -45,69 +68,76 @@ exports.createQuiz = (req, res) => {
           i
         );
       });
-      
-      return code;
+
+      return { code, hostToken };
     });
 
-    const roomCode = insertQuiz();
-    res.status(201).json({ success: true, roomCode });
+    const result = insertQuiz();
+    res.status(201).json({ success: true, roomCode: result.code, hostToken: result.hostToken });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, errors: error.errors });
     }
-    console.error("Error creating quiz:", error);
+    console.error("Error creating quiz:", error.message);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
 
 exports.getQuizStatus = (req, res) => {
   const { roomCode } = req.params;
-  const room = db.prepare("SELECT * FROM rooms WHERE code = ?").get(roomCode);
-  
+  if (!roomCode || typeof roomCode !== 'string') {
+    return res.status(400).json({ success: false, error: "Invalid room code" });
+  }
+
+  const room = db.prepare("SELECT code, host_name, mode, status, current_question_index FROM rooms WHERE code = ?").get(roomCode.trim().toUpperCase());
+
   if (!room) {
     return res.status(404).json({ success: false, error: "Room not found" });
   }
-  
-  res.json({ success: true, status: room.status, hostName: room.host_name });
+
+  res.json({ success: true, status: room.status, hostName: room.host_name, mode: room.mode });
 };
 
 exports.generateQuestions = async (req, res) => {
-  const { topic, numQuestions = 5, globalTimeLimit = 20 } = req.body;
-  if (!topic) return res.status(400).json({ success: false, error: "Topic is required" });
-  
-  const count = Math.max(parseInt(numQuestions) || 5, 1);
-  const timeLimit = parseInt(globalTimeLimit) || 20;
+  const parseResult = generateQuestionsSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ success: false, error: parseResult.error.errors[0].message });
+  }
+
+  const { topic, numQuestions, globalTimeLimit } = parseResult.data;
   const apiKey = process.env.GROQ_API_KEY;
 
   const shuffleOptions = (options, correctOptionStr) => {
     const correctIndex = ['A', 'B', 'C', 'D'].indexOf(correctOptionStr);
-    const correctText = options[correctIndex];
-    
-    // Create an array of objects to shuffle
-    let mapped = options.map((opt, i) => ({ text: opt, isCorrect: i === correctIndex }));
-    
+    const validCorrectIndex = correctIndex >= 0 ? correctIndex : 0;
+
+    // Map with correctness flag
+    let mapped = options.map((opt, i) => ({ text: opt, isCorrect: i === validCorrectIndex }));
+
     // Fisher-Yates shuffle
     for (let i = mapped.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [mapped[i], mapped[j]] = [mapped[j], mapped[i]];
     }
-    
+
     const newCorrectIndex = mapped.findIndex(m => m.isCorrect);
     return {
       options: mapped.map(m => m.text),
-      correctOption: ['A', 'B', 'C', 'D'][newCorrectIndex]
+      correctOption: ['A', 'B', 'C', 'D'][newCorrectIndex >= 0 ? newCorrectIndex : 0]
     };
   };
 
   if (apiKey) {
     try {
-      const prompt = `Generate exactly ${count} multiple choice trivia questions about "${topic}".
+      // Sanitize topic string for safe inclusion in prompt
+      const cleanTopic = topic.replace(/[^\w\s.,?!-]/gi, '').slice(0, 80);
+      const prompt = `Generate exactly ${numQuestions} multiple choice trivia questions about "${cleanTopic}".
 Output ONLY valid JSON. The JSON must be an object containing a single key "questions" which is an array of objects.
 Each object in the array must have exactly these keys:
 - questionText (string, the trivia question)
 - options (array of exactly 4 strings, the possible answers)
 - correctOption (string, exactly "A", "B", "C", or "D")
-- timeLimit (number, exactly ${timeLimit})`;
+- timeLimit (number, exactly ${globalTimeLimit})`;
 
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -124,62 +154,74 @@ Each object in the array must have exactly these keys:
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Groq API Error");
+      if (!response.ok) throw new Error(data.error?.message || "Groq API returned an error");
 
-      const jsonString = data.choices[0].message.content;
+      const jsonString = data.choices?.[0]?.message?.content;
+      if (!jsonString) throw new Error("Empty response from AI model");
+
       const result = JSON.parse(jsonString);
-      
+      if (!Array.isArray(result.questions)) throw new Error("AI did not return a questions array");
+
       const shuffledQuestions = result.questions.map(q => {
-        const shuffled = shuffleOptions(q.options, q.correctOption);
+        const rawOptions = Array.isArray(q.options) && q.options.length === 4
+          ? q.options.map(String)
+          : ["Option A", "Option B", "Option C", "Option D"];
+        const rawCorrect = ['A', 'B', 'C', 'D'].includes(q.correctOption) ? q.correctOption : 'A';
+        const shuffled = shuffleOptions(rawOptions, rawCorrect);
+
         return {
-          ...q,
+          questionText: String(q.questionText || "Question"),
           options: shuffled.options,
           correctOption: shuffled.correctOption,
-          timeLimit: timeLimit
+          timeLimit: globalTimeLimit
         };
       });
 
       return res.json({ success: true, questions: shuffledQuestions });
     } catch (error) {
-      console.error("Groq API Error:", error);
-      console.log("Falling back to mock questions...");
+      console.error("Groq AI Service Notice:", error.message);
+      // Fallback gracefully below
     }
   }
 
-  // Mock Fallback
-  const mockQuestions = Array.from({ length: count }).map((_, i) => {
-    const shuffled = shuffleOptions(["Option A (Correct)", "Option B", "Option C", "Option D"], "A");
+  // Graceful Mock Fallback (when API key is missing or service rate-limits)
+  const mockQuestions = Array.from({ length: numQuestions }).map((_, i) => {
+    const shuffled = shuffleOptions([
+      `Core Concept ${i + 1} (Correct)`,
+      `Alternative Concept B`,
+      `Common Misconception C`,
+      `Plausible Distractor D`
+    ], "A");
     return {
-      questionText: `Mock Question ${i + 1} about ${topic}?`,
+      questionText: `Key question ${i + 1} regarding ${topic}?`,
       options: shuffled.options,
       correctOption: shuffled.correctOption,
-      timeLimit: timeLimit
+      timeLimit: globalTimeLimit
     };
   });
 
-  setTimeout(() => {
-    res.json({ success: true, questions: mockQuestions });
-  }, 1000);
+  return res.json({ success: true, questions: mockQuestions, fallbackUsed: true });
 };
 
 exports.saveToBank = (req, res) => {
   try {
-    const { title, questions } = req.body;
-    if (!title || !questions || questions.length === 0) {
-      return res.status(400).json({ success: false, error: "Title and questions are required" });
+    const parseResult = saveToBankSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ success: false, error: parseResult.error.errors[0].message });
     }
 
+    const { title, questions } = parseResult.data;
     const userId = req.user.id;
 
     const saveQuiz = db.transaction(() => {
       const quizInsert = db.prepare("INSERT INTO saved_quizzes (title, user_id) VALUES (?, ?)").run(title, userId);
       const quizId = quizInsert.lastInsertRowid;
-      
+
       const insertQuestion = db.prepare(`
         INSERT INTO saved_questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, time_limit_seconds)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      
+
       questions.forEach(q => {
         insertQuestion.run(
           quizId, q.questionText, q.options[0], q.options[1], q.options[2], q.options[3], q.correctOption, q.timeLimit || 20
@@ -191,7 +233,7 @@ exports.saveToBank = (req, res) => {
     const quizId = saveQuiz();
     res.json({ success: true, quizId });
   } catch (error) {
-    console.error("Error saving to bank:", error);
+    console.error("Error saving to bank:", error.message);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
@@ -199,10 +241,15 @@ exports.saveToBank = (req, res) => {
 exports.loadFromBank = (req, res) => {
   try {
     const userId = req.user.id;
-    const quizzes = db.prepare("SELECT id, title, created_at FROM saved_quizzes WHERE user_id = ? ORDER BY created_at DESC").all(userId);
-    
+    // Strictly isolate data to the authenticated user's ID
+    const quizzes = db.prepare(
+      "SELECT id, title, created_at FROM saved_quizzes WHERE user_id = ? ORDER BY created_at DESC"
+    ).all(userId);
+
     const formattedQuizzes = quizzes.map(q => {
-      const questions = db.prepare("SELECT * FROM saved_questions WHERE quiz_id = ?").all(q.id);
+      const questions = db.prepare(
+        "SELECT question_text, option_a, option_b, option_c, option_d, correct_option, time_limit_seconds FROM saved_questions WHERE quiz_id = ? ORDER BY id ASC"
+      ).all(q.id);
       return {
         id: q.id,
         title: q.title,
@@ -217,17 +264,19 @@ exports.loadFromBank = (req, res) => {
 
     res.json({ success: true, quizzes: formattedQuizzes });
   } catch (error) {
-    console.error("Error loading from bank:", error);
+    console.error("Error loading from bank:", error.message);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
 
 exports.getGlobalLeaderboard = (req, res) => {
   try {
-    const topParticipants = db.prepare("SELECT name, score FROM participants ORDER BY score DESC LIMIT 10").all();
+    const topParticipants = db.prepare(
+      "SELECT name, score FROM participants ORDER BY score DESC, joined_at ASC LIMIT 10"
+    ).all();
     res.json({ success: true, leaderboard: topParticipants });
   } catch (error) {
-    console.error("Leaderboard Error:", error);
+    console.error("Leaderboard Error:", error.message);
     res.status(500).json({ success: false, error: "Failed to fetch leaderboard" });
   }
 };

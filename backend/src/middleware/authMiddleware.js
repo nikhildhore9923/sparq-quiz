@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-sparq-key-change-in-prod';
+const { getJwtSecret } = require('../utils/jwtConfig');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -9,7 +9,7 @@ module.exports = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded; // { id, username }
     next();
   } catch (err) {

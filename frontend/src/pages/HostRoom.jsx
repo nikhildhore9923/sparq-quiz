@@ -15,10 +15,15 @@ function HostRoom() {
   const [leaderboard, setLeaderboard] = useState([])
   const [finalStats, setFinalStats] = useState(null)
 
+  const hostToken = sessionStorage.getItem(`hostToken_${roomCode}`) || ''
+
   useEffect(() => {
-    // If the host refreshed the page, socket.id changed - rejoin the room
-    // so we keep receiving broadcasts for it.
-    socket.emit('host:joinRoom', { roomCode }, () => {})
+    // Rejoin the room with host authorization token
+    socket.emit('host:joinRoom', { roomCode, hostToken }, (res) => {
+      if (res && res.error) {
+        console.warn('Host join warning:', res.error)
+      }
+    })
 
     socket.on('participantJoined', (data) => {
       setParticipantCount(data.count)
@@ -76,8 +81,8 @@ function HostRoom() {
     }
   }, [roomCode])
 
-  const startQuiz = () => socket.emit('host:startQuiz', { roomCode })
-  const nextQuestion = () => socket.emit('host:nextQuestion', { roomCode })
+  const startQuiz = () => socket.emit('host:startQuiz', { roomCode, hostToken })
+  const nextQuestion = () => socket.emit('host:nextQuestion', { roomCode, hostToken })
 
   const totalVotes = Object.values(optionCounts).reduce((a, b) => a + b, 0);
   const joinUrl = `${window.location.origin}/join?code=${roomCode}`;

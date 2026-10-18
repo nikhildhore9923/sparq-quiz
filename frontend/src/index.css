@@ -1,53 +1,110 @@
-:root {
-  /* Common variables */
+/* ==========================================================================
+   Sparq Design System — Light & Dark Theme Variables
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  /* Typography & Layout */
   --font-display: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Absolute Default Dark Theme */
+  /* Dark Theme Palette */
   --bg: #0f172a;
   --bg-secondary: #1e293b;
-  --panel: rgba(30, 41, 59, 0.7);
-  --panel-border: rgba(51, 65, 85, 0.8);
+  --header-bg: rgba(15, 23, 42, 0.75);
+  --header-border: rgba(255, 255, 255, 0.08);
+
+  --panel: rgba(30, 41, 59, 0.55);
+  --panel-border: rgba(255, 255, 255, 0.1);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
+
   --input-bg: rgba(15, 23, 42, 0.6);
+  --input-border: rgba(255, 255, 255, 0.12);
 
   --accent: #8b5cf6;
   --accent-light: rgba(139, 92, 246, 0.15);
   --accent-hover: #a78bfa;
+
   --correct: #10b981;
   --correct-bg: rgba(16, 185, 129, 0.15);
   --incorrect: #ef4444;
   --incorrect-bg: rgba(239, 68, 68, 0.15);
   --warn: #f59e0b;
   --warn-bg: rgba(245, 158, 11, 0.15);
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.4);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.35);
+
+  --grid-line: rgba(255, 255, 255, 0.02);
+  --glow-radial: rgba(139, 92, 246, 0.15);
+  --modal-overlay-bg: rgba(15, 23, 42, 0.75);
 }
+
+[data-theme="light"] {
+  /* Light Theme Palette */
+  --bg: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-border: rgba(226, 232, 240, 0.9);
+
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-border: rgba(203, 213, 225, 0.85);
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+
+  --accent: #7c3aed;
+  --accent-light: rgba(124, 58, 237, 0.1);
+  --accent-hover: #6d28d9;
+
+  --correct: #059669;
+  --correct-bg: rgba(5, 150, 105, 0.12);
+  --incorrect: #dc2626;
+  --incorrect-bg: rgba(220, 38, 38, 0.12);
+  --warn: #d97706;
+  --warn-bg: rgba(217, 119, 6, 0.12);
+
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 18px rgba(124, 58, 237, 0.2);
+
+  --grid-line: rgba(0, 0, 0, 0.035);
+  --glow-radial: rgba(124, 58, 237, 0.08);
+  --modal-overlay-bg: rgba(15, 23, 42, 0.45);
+}
+
+/* ==========================================================================
+   Global Reset & Base Styles
+   ========================================================================== */
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   font-family: var(--font-body);
   background-color: var(--bg);
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15), transparent 50%),
-    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+    radial-gradient(circle at 50% 0%, var(--glow-radial), transparent 50%),
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 100% 100%, 40px 40px, 40px 40px;
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .layout-wrapper {
@@ -56,19 +113,24 @@ body {
   min-height: 100vh;
 }
 
+/* ==========================================================================
+   Global Navigation Header & Theme Toggle
+   ========================================================================== */
+
 .global-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: rgba(15, 23, 42, 0.7);
+  padding: 14px 24px;
+  background: var(--header-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--header-border);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
 }
 
 .logo-container {
@@ -86,12 +148,12 @@ body {
 }
 
 .theme-toggle {
-  background: transparent;
+  background: var(--input-bg);
   border: 1px solid var(--panel-border);
   color: var(--text-secondary);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,7 +164,8 @@ body {
 .theme-toggle:hover {
   background: var(--bg-secondary);
   color: var(--accent);
-  transform: rotate(15deg);
+  border-color: var(--accent);
+  transform: scale(1.05);
 }
 
 .content-area {
@@ -110,11 +173,11 @@ body {
 }
 
 .slide-in {
-  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slideUpFade {
-  0% { opacity: 0; transform: translateY(20px); }
+  0% { opacity: 0; transform: translateY(16px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
@@ -128,31 +191,37 @@ body {
   max-width: 960px;
 }
 
-/* ---------- Panels & cards ---------- */
+/* ==========================================================================
+   Panels, Cards & Containers
+   ========================================================================== */
+
 .panel {
-  background: rgba(30, 41, 59, 0.4);
+  background: var(--panel);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
   padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
 }
 
 .panel:hover {
   box-shadow: var(--shadow-md), var(--shadow-glow);
-  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .panel-title {
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   margin: 0 0 20px;
   color: var(--text-primary);
 }
 
-/* ---------- Buttons ---------- */
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
 .btn {
   font-family: var(--font-body);
   font-weight: 600;
@@ -177,11 +246,11 @@ body {
 .btn-primary {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.4);
   transform: translateY(-2px);
 }
 
@@ -198,6 +267,7 @@ body {
 .btn-ghost:hover:not(:disabled) {
   background: var(--bg-secondary);
   color: var(--text-primary);
+  border-color: var(--accent);
 }
 
 .btn-block {
@@ -205,11 +275,14 @@ body {
 }
 
 .btn-lg {
-  padding: 16px 24px;
+  padding: 14px 24px;
   font-size: 16px;
 }
 
-/* ---------- Forms ---------- */
+/* ==========================================================================
+   Form Fields, Inputs & Selects
+   ========================================================================== */
+
 .field {
   margin-bottom: 20px;
 }
@@ -217,76 +290,90 @@ body {
 .field label {
   display: block;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 8px;
   letter-spacing: 0.02em;
 }
 
-.field input, .field textarea, .base-input {
+.field input,
+.field textarea,
+.base-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--text-primary);
   transition: var(--transition);
 }
-.base-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+
+.field input::placeholder,
+.field textarea::placeholder,
+.base-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
-.field input:focus, .field textarea:focus, .base-input:focus {
+.base-input:focus,
+.field input:focus,
+.field textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-light);
-  background: var(--bg);
 }
 
-.room-code-input {
-  font-family: var(--font-mono) !important;
-  font-size: 28px !important;
-  letter-spacing: 0.2em;
-  text-align: center;
-  text-transform: uppercase;
-  font-weight: 600;
+select.base-input {
+  cursor: pointer;
+  appearance: auto;
 }
 
-/* ---------- Home / choice screen ---------- */
+/* ==========================================================================
+   Choice Cards (Home Page)
+   ========================================================================== */
+
 .choice-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
+  margin-top: 40px;
 }
 
 .choice-card {
   background: var(--panel);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
   padding: 40px 24px;
   text-align: center;
   cursor: pointer;
   transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
   box-shadow: var(--shadow-sm);
 }
 
 .choice-card:hover {
+  transform: translateY(-4px);
   border-color: var(--accent);
   box-shadow: var(--shadow-md), var(--shadow-glow);
-  transform: translateY(-4px);
+  background: var(--bg-secondary);
 }
 
 .choice-icon {
-  font-size: 40px;
-  margin-bottom: 16px;
-  display: inline-block;
-  transition: transform 0.3s ease;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  transition: var(--transition);
 }
 
 .choice-card:hover .choice-icon {
@@ -295,31 +382,55 @@ body {
 
 .choice-title {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 18px;
   color: var(--text-primary);
 }
 
-/* ---------- Room code display ---------- */
+/* ==========================================================================
+   Room Code & Display (Lobby)
+   ========================================================================== */
+
 .room-code-display {
   text-align: center;
-  padding: 32px 24px;
+  margin-bottom: 24px;
 }
 
 .room-code-big {
   font-family: var(--font-mono);
-  font-size: 56px;
+  font-size: 48px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: var(--text-primary);
-  text-shadow: 0 2px 10px rgba(139, 92, 246, 0.2);
-  margin: 16px 0;
-  background: linear-gradient(135deg, var(--accent) 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent);
+  margin: 12px 0;
+  text-shadow: var(--shadow-glow);
 }
 
-/* ---------- Question builder ---------- */
+.room-code-input {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 16px;
+  width: 100%;
+  background: var(--input-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.room-code-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* ==========================================================================
+   Question Builder & Cards (Host Create)
+   ========================================================================== */
+
 .question-card {
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
@@ -359,10 +470,6 @@ body {
   margin-bottom: 12px;
 }
 
-.option-row input[type="text"] {
-  flex: 1;
-}
-
 .option-row input[type="radio"] {
   accent-color: var(--accent);
   width: 20px;
@@ -370,14 +477,18 @@ body {
   cursor: pointer;
 }
 
-/* ---------- Live question (player + host view) ---------- */
+/* ==========================================================================
+   Live Question & Option Buttons (Player & Host View)
+   ========================================================================== */
+
 .question-live-text {
   font-family: var(--font-display);
   font-size: 26px;
   font-weight: 700;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.35;
+  color: var(--text-primary);
 }
 
 .timer-ring {
@@ -411,7 +522,7 @@ body {
   background: var(--input-bg);
   border: 2px solid var(--panel-border);
   border-radius: var(--radius-lg);
-  padding: 24px 20px;
+  padding: 20px 18px;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 16px;
@@ -428,13 +539,13 @@ body {
     border-color: var(--accent);
     background: var(--accent-light);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
   }
 }
 
 .option-btn:disabled {
   cursor: default;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .option-btn.selected {
@@ -444,37 +555,44 @@ body {
 }
 
 .option-btn.correct {
-  border-color: var(--correct);
-  background: var(--correct-bg);
-  color: var(--correct);
+  border-color: var(--correct) !important;
+  background: var(--correct-bg) !important;
+  color: var(--correct) !important;
 }
 
 .option-btn.incorrect {
-  border-color: var(--incorrect);
-  background: var(--incorrect-bg);
-  color: var(--incorrect);
+  border-color: var(--incorrect) !important;
+  background: var(--incorrect-bg) !important;
+  color: var(--incorrect) !important;
 }
 
 .option-letter {
   font-family: var(--font-mono);
   font-size: 14px;
-  opacity: 0.6;
+  font-weight: 700;
   margin-right: 12px;
   background: var(--bg-secondary);
+  color: var(--text-primary);
   width: 28px;
   height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
-.option-btn.correct .option-letter, .option-btn.incorrect .option-letter, .option-btn.selected .option-letter {
+.option-btn.correct .option-letter,
+.option-btn.incorrect .option-letter,
+.option-btn.selected .option-letter {
   background: rgba(255, 255, 255, 0.2);
   color: inherit;
 }
 
-/* ---------- Live tally bars (host view) ---------- */
+/* ==========================================================================
+   Live Tally Bars (Host View)
+   ========================================================================== */
+
 .tally-row {
   display: grid;
   grid-template-columns: 36px 1fr 48px;
@@ -509,12 +627,15 @@ body {
   color: var(--text-primary);
 }
 
-/* ---------- Leaderboard ---------- */
+/* ==========================================================================
+   Leaderboard
+   ========================================================================== */
+
 .leaderboard-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 12px;
+  padding: 14px 12px;
   border-bottom: 1px solid var(--panel-border);
   transition: var(--transition);
 }
@@ -541,6 +662,7 @@ body {
   flex: 1;
   font-weight: 600;
   font-size: 16px;
+  color: var(--text-primary);
 }
 
 .leaderboard-score {
@@ -554,40 +676,15 @@ body {
 .leaderboard-row.rank-2 .leaderboard-rank { color: #94a3b8; }
 .leaderboard-row.rank-3 .leaderboard-rank { color: #b45309; }
 
-/* ---------- Misc ---------- */
+/* ==========================================================================
+   Helper Utilities, Stats & Badges
+   ========================================================================== */
+
 .center-text {
   text-align: center;
   color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.5;
-}
-
-.pulse-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  padding: 6px 14px;
-  border-radius: 100px;
-  box-shadow: var(--shadow-sm);
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--correct);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
 }
 
 .error-text {
@@ -603,7 +700,7 @@ body {
 
 .stat-inline {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   justify-content: center;
   margin-bottom: 24px;
 }
@@ -632,23 +729,10 @@ body {
   letter-spacing: 0.1em;
 }
 
-@media (max-width: 640px) {
-  .choice-grid { grid-template-columns: 1fr; }
-  .option-buttons { grid-template-columns: 1fr; }
-  .room-code-big { font-size: 40px; }
-  .panel {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-  .stat-inline { gap: 16px; }
-}
+/* ==========================================================================
+   Game Mode Cards
+   ========================================================================== */
 
-/* ---------- Game Mode Cards ---------- */
 .mode-cards-grid {
   display: flex;
   flex-direction: column;
@@ -695,7 +779,10 @@ body {
   color: var(--text-secondary);
 }
 
-/* ---------- Drag and Drop Options ---------- */
+/* ==========================================================================
+   Drag & Drop Options
+   ========================================================================== */
+
 .draggable-option {
   cursor: grab;
   transition: background-color 0.2s;
@@ -714,18 +801,22 @@ body {
   display: flex;
   align-items: center;
 }
+
 .drag-handle:active {
   cursor: grabbing;
 }
 
-/* ---------- Custom Modal ---------- */
+/* ==========================================================================
+   Custom Modal Dialog
+   ========================================================================== */
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.7);
+  background: var(--modal-overlay-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -742,8 +833,9 @@ body {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 440px;
-  box-shadow: var(--shadow-md), var(--shadow-glow);
+  box-shadow: var(--shadow-md);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-primary);
 }
 
 @keyframes fadeIn {
@@ -756,8 +848,15 @@ body {
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
 
-
-
-
-
+@media (max-width: 640px) {
+  .choice-grid { grid-template-columns: 1fr; }
+  .option-buttons { grid-template-columns: 1fr; }
+  .room-code-big { font-size: 38px; }
+  .panel { padding: 20px; }
+  .stat-inline { gap: 16px; }
+  .global-header { padding: 12px 16px; }
+}

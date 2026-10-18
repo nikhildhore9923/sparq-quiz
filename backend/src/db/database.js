@@ -1,8 +1,9 @@
 const Database = require("better-sqlite3");
 const path = require("path");
+const crypto = require("crypto");
 
-// Put the db in the root of the backend folder
-const dbPath = path.join(__dirname, "../../quiz.db");
+// Put the db in the root of the backend folder or custom persistent disk path
+const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, "../../quiz.db");
 const db = new Database(dbPath);
 
 db.pragma("journal_mode = WAL");
@@ -15,6 +16,7 @@ db.exec(`
     mode TEXT NOT NULL DEFAULT 'Classic', -- Classic | Rapid Fire | Survival
     status TEXT NOT NULL DEFAULT 'WAITING', -- WAITING | STARTING | QUESTION_ACTIVE | QUESTION_ENDED | FINISHED
     current_question_index INTEGER DEFAULT 0,
+    host_token TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -88,7 +90,7 @@ db.exec(`
   );
 `);
 
-// Graceful migrations for existing deployed databases
+// Graceful migrations for existing databases
 try {
   db.prepare("ALTER TABLE participants ADD COLUMN streak INTEGER DEFAULT 0").run();
 } catch (e) {}
@@ -101,22 +103,76 @@ try {
 try {
   db.prepare("ALTER TABLE saved_quizzes ADD COLUMN user_id INTEGER").run();
 } catch (e) {}
+/**
+ * Migration: Ensures rooms table has host_token and backfills NULL values.
+ * - Safely handles the expected 'column already exists' case
+ * - Never silently swallows unexpected errors during schema check or backfill
+ * - Atomically backfills unique cryptographic tokens for any legacy rows with NULL host_token
+ * - Preserves existing valid host tokens and quiz data
+ */
+function migrateHostToken(database = db) {
+  // 1. Verify or add host_token column
+  try {
+    const columns = database.prepare("PRAGMA table_info(rooms)").all();
+    const hasHostToken = columns.some((col) => col.name === "host_token");
+
+    if (!hasHostToken) {
+      try {
+        database.prepare("ALTER TABLE rooms ADD COLUMN host_token TEXT").run();
+      } catch (alterErr) {
+        const isDuplicate = alterErr.message && alterErr.message.toLowerCase().includes("duplicate column name");
+        if (!isDuplicate) {
+          console.error("Critical database migration failure: Could not add 'host_token' column:", alterErr.message);
+          throw alterErr;
+        }
+      }
+    }
+  } catch (schemaErr) {
+    if (!schemaErr.message || !schemaErr.message.toLowerCase().includes("duplicate column name")) {
+      console.error("Critical database migration failure: Schema check failed for 'rooms' table:", schemaErr.message);
+      throw schemaErr;
+    }
+  }
+
+  // 2. Backfill legacy rooms that have a NULL host_token so authorization cannot be bypassed
+  try {
+    const legacyRooms = database.prepare("SELECT id FROM rooms WHERE host_token IS NULL").all();
+    if (legacyRooms.length > 0) {
+      const updateToken = database.prepare("UPDATE rooms SET host_token = ? WHERE id = ?");
+      const backfillTx = database.transaction((rooms) => {
+        for (const r of rooms) {
+          updateToken.run(crypto.randomBytes(24).toString("hex"), r.id);
+        }
+      });
+      backfillTx(legacyRooms);
+    }
+  } catch (backfillErr) {
+    console.error("Critical database migration failure: Could not backfill NULL host_tokens in 'rooms':", backfillErr.message);
+    throw backfillErr;
+  }
+}
+
+// Execute migration for the active database on startup
+try {
+  migrateHostToken(db);
+} catch (err) {
+  console.error("FATAL: Database initialization halted due to host_token migration failure. Preventing startup in insecure state.");
+  process.exit(1);
+}
 
 function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No easily confused characters like O/0/I/1
   let code;
   let exists = true;
   while (exists) {
-    code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    code = Array.from({ length: 6 }, () => chars[crypto.randomInt(0, chars.length)]).join("");
     exists = db.prepare("SELECT id FROM rooms WHERE code = ?").get(code);
   }
   return code;
 }
 
 function generateToken() {
-  return (
-    Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2)
-  );
+  return crypto.randomBytes(24).toString("hex");
 }
 
-module.exports = { db, generateRoomCode, generateToken };
+module.exports = { db, generateRoomCode, generateToken, migrateHostToken };

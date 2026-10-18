@@ -212,6 +212,9 @@ function HostCreate() {
       }
       
       sessionStorage.setItem('hostRoomCode', data.roomCode)
+      if (data.hostToken) {
+        sessionStorage.setItem(`hostToken_${data.roomCode}`, data.hostToken)
+      }
       navigate(`/host/${data.roomCode}`)
     } catch (err) {
       setCreating(false)
