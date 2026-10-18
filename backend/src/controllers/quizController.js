@@ -76,7 +76,9 @@ exports.createQuiz = (req, res) => {
     res.status(201).json({ success: true, roomCode: result.code, hostToken: result.hostToken });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, errors: error.errors });
+      const issues = error.issues || error.errors || [];
+      const firstMsg = issues[0]?.message || "Invalid input";
+      return res.status(400).json({ success: false, error: firstMsg, errors: issues });
     }
     console.error("Error creating quiz:", error.message);
     res.status(500).json({ success: false, error: "Internal Server Error" });
@@ -101,7 +103,8 @@ exports.getQuizStatus = (req, res) => {
 exports.generateQuestions = async (req, res) => {
   const parseResult = generateQuestionsSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ success: false, error: parseResult.error.errors[0].message });
+    const msg = (parseResult.error.issues || parseResult.error.errors || [])[0]?.message || "Validation error";
+    return res.status(400).json({ success: false, error: msg });
   }
 
   const { topic, numQuestions, globalTimeLimit } = parseResult.data;
@@ -207,7 +210,8 @@ exports.saveToBank = (req, res) => {
   try {
     const parseResult = saveToBankSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ success: false, error: parseResult.error.errors[0].message });
+      const msg = (parseResult.error.issues || parseResult.error.errors || [])[0]?.message || "Validation error";
+      return res.status(400).json({ success: false, error: msg });
     }
 
     const { title, questions } = parseResult.data;

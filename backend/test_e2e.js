@@ -61,6 +61,32 @@ async function run() {
   check("Auth: Host login succeeded and returned valid token", loginRes.status === 200 && !!loginData.token);
   const hostJwt = loginData.token;
 
+  // 1d. Test Malformed Registration (Should return 400 Bad Request with message, NOT 500)
+  const badRegRes = await fetch(`${URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: "ab", password: "Password123!" }),
+  });
+  const badRegData = await badRegRes.json();
+  check("Auth Validation: Short username rejected with 400 (not 500)", badRegRes.status === 400 && badRegData.error && badRegData.error.includes("at least 3 characters"));
+
+  const badPassRes = await fetch(`${URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: "ValidUser123", password: "123" }),
+  });
+  const badPassData = await badPassRes.json();
+  check("Auth Validation: Short password rejected with 400 (not 500)", badPassRes.status === 400 && badPassData.error && badPassData.error.includes("at least 6 characters"));
+
+  // 1e. Test Malformed Login (Should return 400 Bad Request, NOT 500)
+  const badLoginRes = await fetch(`${URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: "", password: "" }),
+  });
+  const badLoginData = await badLoginRes.json();
+  check("Auth Validation: Malformed login rejected with 400 (not 500)", badLoginRes.status === 400 && !!badLoginData.error);
+
   // -------------------------------------------------------------------------
   // 2. Private Quiz Bank & Authorization Tests
   // -------------------------------------------------------------------------
@@ -148,6 +174,29 @@ async function run() {
   const dataB = await createRoomB.json();
   const roomCodeB = dataB.roomCode;
   const hostTokenB = dataB.hostToken;
+
+  // 4b. Test Malformed Room Creation (Should return 400 Bad Request, NOT 500)
+  const badRoomRes = await fetch(`${URL}/api/quiz/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      hostName: "",
+      questions: []
+    })
+  });
+  const badRoomData = await badRoomRes.json();
+  check("Room Validation: Malformed room creation rejected with 400 (not 500)", badRoomRes.status === 400 && !badRoomData.success && (!!badRoomData.error || (badRoomData.errors && badRoomData.errors.length > 0)));
+
+  const badOptionsRes = await fetch(`${URL}/api/quiz/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      hostName: "ValidHost",
+      questions: [{ questionText: "q?", options: ["opt1", "opt2"], correctOption: "A" }] // Only 2 options instead of 4
+    })
+  });
+  const badOptionsData = await badOptionsRes.json();
+  check("Room Validation: Question with invalid options count rejected with 400", badOptionsRes.status === 400 && !badOptionsData.success);
 
   // -------------------------------------------------------------------------
   // 5. Host Authorization Attack Vector Testing

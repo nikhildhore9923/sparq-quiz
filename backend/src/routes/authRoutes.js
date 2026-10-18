@@ -23,7 +23,8 @@ router.post('/register', async (req, res) => {
   try {
     const parseResult = authSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors[0].message });
+      const msg = (parseResult.error.issues || parseResult.error.errors || [])[0]?.message || "Invalid input";
+      return res.status(400).json({ error: msg });
     }
 
     const { username, password } = parseResult.data;
@@ -53,7 +54,8 @@ router.post('/login', async (req, res) => {
   try {
     const parseResult = authSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors[0].message });
+      const msg = (parseResult.error.issues || parseResult.error.errors || [])[0]?.message || "Invalid input";
+      return res.status(400).json({ error: msg });
     }
 
     const { username, password } = parseResult.data;
