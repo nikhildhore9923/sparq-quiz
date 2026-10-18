@@ -7,7 +7,8 @@ import HostRoom from './pages/HostRoom'
 import PlayerJoin from './pages/PlayerJoin'
 import PlayerRoom from './pages/PlayerRoom'
 import Login from './pages/Login'
-import { Zap, LogOut, LogIn, Sun, Moon } from 'lucide-react'
+import { Zap, LogOut, LogIn, Sun, Moon, Volume2, VolumeX, ShieldCheck } from 'lucide-react'
+import { isSoundMuted, toggleSound } from './utils/sounds'
 
 function App() {
   const { username, logout } = useContext(AuthContext)
@@ -22,6 +23,22 @@ function App() {
     }
     return 'dark'
   })
+
+  // Sound preference state
+  const [muted, setMuted] = useState(isSoundMuted())
+
+  useEffect(() => {
+    const handleSoundChange = (e) => {
+      setMuted(e.detail.muted)
+    }
+    window.addEventListener('sparq:sound-change', handleSoundChange)
+    return () => window.removeEventListener('sparq:sound-change', handleSoundChange)
+  }, [])
+
+  const handleToggleSound = () => {
+    const next = toggleSound()
+    setMuted(next)
+  }
 
   // Apply theme to document element
   useEffect(() => {
@@ -60,13 +77,25 @@ function App() {
       <header className="global-header">
         <Link to="/" style={{ textDecoration: 'none' }}>
           <div className="logo-container">
-            <Zap size={24} fill="currentColor" />
-            <span className="logo-text">Sparq</span>
+            <div className="logo-icon-wrap">
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <span className="logo-text">Sparq<span>.</span></span>
           </div>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        
+        <div className="header-controls">
           <button
-            className="theme-toggle"
+            className="icon-btn-round"
+            onClick={handleToggleSound}
+            title={muted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
+            aria-label="Toggle Sound"
+          >
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+
+          <button
+            className="icon-btn-round"
             onClick={toggleTheme}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             aria-label="Toggle theme"
@@ -75,18 +104,36 @@ function App() {
           </button>
 
           {username ? (
-            <>
-              <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Host: <span style={{ color: 'var(--accent)' }}>{username}</span>
-              </span>
-              <button className="btn btn-ghost" onClick={handleLogout} style={{ padding: '6px 12px', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: 13, 
+                  color: 'var(--text-secondary)', 
+                  fontWeight: 600,
+                  background: 'var(--input-bg)',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid var(--panel-border)'
+                }}
+              >
+                <ShieldCheck size={14} color="var(--accent)" />
+                <span style={{ color: 'var(--accent)' }}>{username}</span>
+              </div>
+              <button 
+                className="btn btn-ghost btn-sm" 
+                onClick={handleLogout} 
+                title="Sign out of host account"
+              >
                 <LogOut size={14} /> Logout
               </button>
-            </>
+            </div>
           ) : (
             <Link to="/login" style={{ textDecoration: 'none' }}>
-              <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 13 }}>
-                <LogIn size={14} /> Host Login
+              <button className="btn btn-ghost btn-sm">
+                <LogIn size={14} /> Host Portal
               </button>
             </Link>
           )}
@@ -103,6 +150,28 @@ function App() {
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>
+
+      <footer style={{ 
+        textAlign: 'center', 
+        padding: '24px 20px', 
+        fontSize: '13px', 
+        color: 'var(--text-muted)',
+        borderTop: '1px solid var(--header-border)',
+        marginTop: 'auto'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
+          <span style={{ 
+            width: '8px', 
+            height: '8px', 
+            borderRadius: '50%', 
+            backgroundColor: 'var(--correct)',
+            display: 'inline-block',
+            boxShadow: '0 0 8px var(--correct)' 
+          }}></span>
+          <span>Sparq Real-Time Quiz Engine Active</span>
+        </div>
+        <p>Ultra-low latency multiplayer trivia • Powered by WebSockets</p>
+      </footer>
     </div>
   )
 }
