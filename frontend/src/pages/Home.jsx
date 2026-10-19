@@ -17,16 +17,16 @@ function Home() {
       {/* Hero Header */}
       <section className="hero-section">
         <div className="hero-pill">
-          <Zap size={14} fill="currentColor" />
+          <Zap size={13} fill="currentColor" />
           <span>REAL-TIME MULTIPLAYER TRIVIA</span>
         </div>
         
         <h1 className="hero-title">
-          Turn Knowledge into an <span className="gradient-text">Electrifying Showdown</span>
+          Turn Knowledge into an <span className="title-highlight">Electrifying Showdown.</span>
         </h1>
         
         <p className="hero-subtitle">
-          Host interactive live quizzes with sub-50ms WebSocket latency, AI question generation, 
+          Host interactive live quizzes with sub-50ms WebSocket latency, AI-crafted trivia, 
           dynamic streak multipliers, and instant podium fanfare.
         </p>
 
@@ -45,7 +45,7 @@ function Home() {
             className="btn btn-primary"
             disabled={!quickPin.trim()}
           >
-            Join Game <ArrowRight size={18} />
+            Join Game <ArrowRight size={17} />
           </button>
         </form>
       </section>
@@ -61,7 +61,7 @@ function Home() {
         >
           <div>
             <div className="card-top-icon" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
-              <PlaySquare size={30} />
+              <PlaySquare size={26} />
             </div>
             <span className="card-badge" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
               Host & Present
@@ -74,7 +74,7 @@ function Home() {
           </div>
           <div className="card-footer-cta">
             <span>Create Game Room</span>
-            <ArrowRight size={18} />
+            <ArrowRight size={16} />
           </div>
         </div>
 
@@ -87,7 +87,7 @@ function Home() {
         >
           <div>
             <div className="card-top-icon" style={{ background: 'var(--correct-bg)', color: 'var(--correct)' }}>
-              <Users size={30} />
+              <Users size={26} />
             </div>
             <span className="card-badge" style={{ background: 'var(--correct-bg)', color: 'var(--correct)' }}>
               Contestant
@@ -100,7 +100,7 @@ function Home() {
           </div>
           <div className="card-footer-cta" style={{ color: 'var(--correct)' }}>
             <span>Enter Lobby</span>
-            <ArrowRight size={18} />
+            <ArrowRight size={16} />
           </div>
         </div>
       </div>
@@ -115,31 +115,31 @@ function Home() {
         <div className="features-grid">
           <div className="feature-item">
             <div className="feature-icon-wrap">
-              <Zap size={22} />
+              <Zap size={20} />
             </div>
             <h4>Sub-50ms Latency</h4>
             <p>Direct WebSocket sync ensures every buzzer, timer tick, and vote registers with zero lag.</p>
           </div>
 
           <div className="feature-item">
-            <div className="feature-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
-              <Sparkles size={22} />
+            <div className="feature-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+              <Sparkles size={20} />
             </div>
             <h4>AI Quiz Generation</h4>
             <p>Type any topic to automatically generate balanced, 4-option trivia questions with Groq AI.</p>
           </div>
 
           <div className="feature-item">
-            <div className="feature-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
-              <Flame size={22} />
+            <div className="feature-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+              <Flame size={20} />
             </div>
             <h4>Dynamic Streaks</h4>
             <p>Score multipliers reward sustained accuracy and lightning-fast reaction speeds.</p>
           </div>
 
           <div className="feature-item">
-            <div className="feature-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-              <BarChart3 size={22} />
+            <div className="feature-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+              <BarChart3 size={20} />
             </div>
             <h4>Live Audience Tallies</h4>
             <p>Real-time vote distribution graphs and question-by-question difficulty analytics.</p>
