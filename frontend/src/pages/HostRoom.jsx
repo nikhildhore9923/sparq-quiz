@@ -14,7 +14,10 @@ import {
   BarChart3, 
   Clock, 
   Share2,
-  RefreshCw 
+  RefreshCw,
+  Maximize2,
+  Minimize2,
+  Tv
 } from 'lucide-react'
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D']
@@ -45,12 +48,25 @@ function HostRoom() {
   const [leaderboard, setLeaderboard] = useState([])
   const [finalStats, setFinalStats] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const hostToken = sessionStorage.getItem(`hostToken_${roomCode}`) || ''
 
   const showToast = (msg) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(''), 2500)
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {})
+      setIsFullscreen(true)
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {})
+        setIsFullscreen(false)
+      }
+    }
   }
 
   useEffect(() => {
@@ -151,9 +167,52 @@ function HostRoom() {
         </div>
       )}
 
+      {/* Top Arena Control Deck Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ 
+            fontFamily: 'var(--font-mono)', 
+            fontSize: 12, 
+            fontWeight: 700, 
+            padding: '5px 12px', 
+            borderRadius: 'var(--radius-full)', 
+            background: 'var(--input-bg)',
+            border: '1px solid var(--panel-border)',
+            color: 'var(--text-secondary)'
+          }}>
+            ROOM: <strong style={{ color: 'var(--accent)' }}>{roomCode}</strong>
+          </span>
+          <span style={{ 
+            fontSize: 12, 
+            fontWeight: 700, 
+            padding: '5px 12px', 
+            borderRadius: 'var(--radius-full)', 
+            background: participantCount > 0 ? 'var(--correct-bg)' : 'var(--input-bg)',
+            border: `1px solid ${participantCount > 0 ? 'var(--correct)' : 'var(--panel-border)'}`,
+            color: participantCount > 0 ? 'var(--correct)' : 'var(--text-secondary)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <Users size={13} /> {participantCount} Contestants
+          </span>
+        </div>
+
+        {/* Theater / Big-Screen Projection Button */}
+        <button 
+          className="btn btn-ghost btn-sm" 
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Exit Big Screen Mode' : 'Big Screen Theater Mode for Projectors / TVs'}
+          style={{ gap: 6 }}
+        >
+          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          <span>{isFullscreen ? 'Exit Theater' : 'Theater Mode'}</span>
+        </button>
+      </div>
+
       {/* 1. LOBBY PHASE */}
       {phase === 'lobby' && (
-        <div className="panel" style={{ textAlign: 'center', padding: '40px 24px' }}>
+        <div className="panel" style={{ textAlign: 'center', padding: '48px 24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ 
               background: 'var(--accent-light)', 
@@ -165,15 +224,15 @@ function HostRoom() {
               fontFamily: 'var(--font-mono)',
               letterSpacing: '0.08em'
             }}>
-              GAME LOBBY READY
+              GAME LOBBY READY • PROJECTOR VIEW
             </span>
           </div>
 
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, marginBottom: 6 }}>
-            Join the Quiz!
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, marginBottom: 6 }}>
+            Join the Arena!
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 16, marginBottom: 28 }}>
-            Scan the QR code or enter the Room PIN at <strong>{window.location.host}</strong>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 16, marginBottom: 32 }}>
+            Scan the QR code with any smartphone or enter the Room PIN at <strong>{window.location.host}</strong>
           </p>
 
           <div style={{ 
@@ -187,12 +246,12 @@ function HostRoom() {
             {/* Big PIN Display */}
             <div style={{ 
               background: 'var(--input-bg)', 
-              padding: '24px 32px', 
+              padding: '24px 36px', 
               borderRadius: 'var(--radius-xl)',
               border: '2px solid var(--panel-border)',
               boxShadow: 'var(--shadow-md)'
             }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
                 ROOM PIN
               </span>
               <div className="room-code-big">{roomCode}</div>
@@ -225,7 +284,7 @@ function HostRoom() {
           </div>
 
           {/* Connected Participants Counter */}
-          <div style={{ maxWidth: 440, margin: '0 auto 28px' }}>
+          <div style={{ maxWidth: 460, margin: '0 auto 28px' }}>
             <div className="stat-inline">
               <div className="stat-inline-item">
                 <div className="stat-inline-value" style={{ color: participantCount > 0 ? 'var(--correct)' : 'var(--text-secondary)' }}>
@@ -233,7 +292,7 @@ function HostRoom() {
                 </div>
                 <div className="stat-inline-label">
                   <Users size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
-                  Players Joined
+                  Contestants Connected
                 </div>
               </div>
             </div>
@@ -243,7 +302,7 @@ function HostRoom() {
               <div className="participant-chips-grid">
                 {participants.map((name, i) => (
                   <span className="participant-chip" key={name + i}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--correct)' }}></span>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--correct)' }} />
                     {name}
                   </span>
                 ))}
@@ -255,9 +314,9 @@ function HostRoom() {
             className="btn btn-primary btn-lg"
             onClick={startQuiz}
             disabled={participantCount === 0}
-            style={{ minWidth: 260 }}
+            style={{ minWidth: 280, boxShadow: 'var(--shadow-lg), 0 0 25px var(--accent-glow)' }}
           >
-            {participantCount === 0 ? 'Waiting for players to join…' : `Start Quiz (${participantCount} Players)`} 
+            {participantCount === 0 ? 'Waiting for players to join…' : `🚀 Start Quiz (${participantCount} Players)`} 
             <ArrowRight size={20} />
           </button>
         </div>
@@ -344,13 +403,13 @@ function HostRoom() {
             </span>
             <span style={{ 
               fontSize: 13, 
-              padding: '4px 12px', 
+              padding: '4px 14px', 
               borderRadius: 'var(--radius-full)', 
               background: 'var(--correct-bg)', 
               color: 'var(--correct)', 
               fontWeight: 700 
             }}>
-              Correct Answer: {questionResult.correctOption} ({OPTION_SHAPES[questionResult.correctOption]})
+              Correct Answer: Option {questionResult.correctOption} ({OPTION_SHAPES[questionResult.correctOption]})
             </span>
           </div>
 
@@ -391,7 +450,7 @@ function HostRoom() {
             <div className="fastest-spotlight">
               <Zap size={20} fill="#f59e0b" color="#f59e0b" />
               <span>
-                Fastest correct answer: <strong>{questionResult.fastestResponder.name}</strong> in{' '}
+                ⚡ Fastest correct answer: <strong>{questionResult.fastestResponder.name}</strong> in{' '}
                 <strong>{(questionResult.fastestResponder.time / 1000).toFixed(2)}s</strong>
               </span>
             </div>
@@ -419,7 +478,7 @@ function HostRoom() {
             style={{ marginTop: 28 }}
           >
             {question && question.questionNumber === question.totalQuestions 
-              ? 'Finish Quiz & Reveal Winners 🏆' 
+              ? 'Finish Quiz & Reveal Tournament Champions 🏆' 
               : 'Next Question →'}
           </button>
         </div>
