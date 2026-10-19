@@ -11,11 +11,7 @@ import {
   CheckCircle, 
   AlertCircle,
   HelpCircle,
-  Clock,
-  Sliders,
-  Layers,
-  PlaySquare,
-  ShieldCheck
+  Clock
 } from 'lucide-react'
 
 const TOPIC_PRESETS = [
@@ -274,31 +270,26 @@ function HostCreate() {
     }
   }
 
-  const estimatedTotalSeconds = questions.reduce((acc, q) => acc + (parseInt(q.timeLimit) || 20), 0)
-  const estMins = Math.floor(estimatedTotalSeconds / 60)
-  const estSecs = estimatedTotalSeconds % 60
-
   return (
     <div className="app wide slide-in">
-      {/* Studio Header Bar */}
+      <button 
+        className="btn btn-ghost" 
+        onClick={() => navigate('/')} 
+        style={{ marginBottom: 20, padding: '8px 12px' }}
+      >
+        ← Back to Home
+      </button>
+
+      {/* Top Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
         <div>
-          <button 
-            className="btn btn-ghost btn-sm" 
-            onClick={() => navigate('/')} 
-            style={{ marginBottom: 8, padding: '4px 10px' }}
-          >
-            ← Back to Home
-          </button>
-          <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 32 }}>
-            Quiz Studio
-          </h1>
+          <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 32 }}>Create Live Quiz</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
-            Design custom rounds or synthesize entire question sets with Groq AI
+            Build custom questions or generate an entire trivia set with AI
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {savedQuizzes.length > 0 && (
             <select 
               className="base-input" 
@@ -317,16 +308,13 @@ function HostCreate() {
         </div>
       </div>
 
-      {/* Main Studio Multi-Column Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 28 }}>
-        {/* Left Column: Quiz Configuration & Game Mode */}
-        <div className="panel" style={{ padding: 26 }}>
-          <h2 className="panel-title" style={{ fontSize: 18, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Sliders size={18} color="var(--accent)" /> Game Setup
-          </h2>
-
+      {/* Main Settings Panel */}
+      <div className="panel" style={{ marginBottom: 28, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32 }}>
+        {/* Left Column: Host & Game Mode */}
+        <div>
+          <h2 className="panel-title" style={{ fontSize: 18, marginBottom: 16 }}>Quiz Configuration</h2>
           <div className="field">
-            <label>Host Name (visible on big screen & player devices)</label>
+            <label>Host Name (visible to players)</label>
             <input 
               value={hostName} 
               onChange={(e) => setHostName(e.target.value)} 
@@ -336,12 +324,12 @@ function HostCreate() {
           </div>
           
           <div className="field">
-            <label>Tournament Game Mode</label>
+            <label>Game Mode</label>
             <div className="mode-cards-grid">
               {[
-                { id: 'Classic', icon: '🎯', desc: 'Standard scoring & streak multipliers.' },
-                { id: 'Rapid Fire', icon: '⚡', desc: '50% time limit, double pressure.' },
-                { id: 'Survival', icon: '💀', desc: 'Single elimination: wrong answer = out.' }
+                { id: 'Classic', icon: '🎯', desc: 'Standard rules and timing with streak bonuses.' },
+                { id: 'Rapid Fire', icon: '⚡', desc: 'Half time, high pressure, instant reactions.' },
+                { id: 'Survival', icon: '💀', desc: 'Single elimination: one wrong answer knocks you out.' }
               ].map(m => (
                 <div 
                   key={m.id} 
@@ -357,39 +345,20 @@ function HostCreate() {
               ))}
             </div>
           </div>
-
-          {/* Quick Studio Summary Card */}
-          <div style={{ 
-            background: 'var(--input-bg)', 
-            padding: '14px 18px', 
-            borderRadius: 'var(--radius-md)', 
-            border: '1px solid var(--panel-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: 13
-          }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Estimated Runtime:</span>
-            <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
-              ~{estMins}m {estSecs}s ({questions.length} Qs)
-            </strong>
-          </div>
         </div>
 
-        {/* Right Column: Instant Groq AI Generator */}
-        <div className="panel" style={{ padding: 26, background: 'var(--bg-secondary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        {/* Right Column: AI Generator */}
+        <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--panel-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <Sparkles size={20} color="var(--accent)" />
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18 }}>
-              Instant AI Quiz Synthesis
-            </h3>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18 }}>Instant AI Generator</h3>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 16 }}>
-            Powered by Groq AI — generate balanced 4-option trivia in under 3 seconds!
+            Powered by Groq AI — generate tailored, 4-option trivia in seconds!
           </p>
 
           <div className="field">
-            <label>Topic or Subject</label>
+            <label>Topic</label>
             <input 
               value={topic} 
               onChange={(e) => setTopic(e.target.value)} 
@@ -449,28 +418,27 @@ function HostCreate() {
           >
             {generating ? (
               <>
-                <Sparkles size={16} className="slide-in" /> Synthesizing Trivia…
+                <Sparkles size={16} className="slide-in" /> Generating Trivia…
               </>
             ) : (
               <>
-                <Sparkles size={16} /> Synthesize Questions with AI
+                <Sparkles size={16} /> Generate Questions with AI
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Questions Stack Header */}
+      {/* Questions Section */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Layers size={20} color="var(--accent)" /> Question Stack ({questions.length})
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, margin: 0 }}>
+          Questions ({questions.length})
         </h2>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          Click the radio button to designate the correct answer
+          Click the radio button to select the correct answer
         </span>
       </div>
 
-      {/* Question Cards */}
       {questions.map((q, qIndex) => (
         <div className="question-card slide-in" key={qIndex}>
           <div className="question-card-header">
@@ -575,7 +543,7 @@ function HostCreate() {
                       onChange={() => updateQuestion(qIndex, { correctOption: letter })}
                       style={{ accentColor: 'var(--correct)', width: 16, height: 16 }}
                     />
-                    {isCorrect ? 'Correct ✓' : 'Mark'}
+                    {isCorrect ? 'Correct' : 'Mark'}
                   </label>
                 </div>
               )
@@ -587,7 +555,7 @@ function HostCreate() {
       <button 
         className="btn btn-ghost btn-block" 
         onClick={addQuestion} 
-        style={{ marginBottom: 28, borderStyle: 'dashed', padding: '16px' }}
+        style={{ marginBottom: 24, borderStyle: 'dashed', padding: '16px' }}
       >
         <PlusCircle size={18} /> Add Another Question
       </button>
@@ -599,15 +567,15 @@ function HostCreate() {
         </div>
       )}
 
-      {/* Sticky Bottom Action Bar */}
+      {/* Sticky Bottom Launch Button */}
       <div style={{ position: 'sticky', bottom: 20, zIndex: 50 }}>
         <button 
           className="btn btn-primary btn-block btn-lg" 
           onClick={handleCreate} 
           disabled={creating}
-          style={{ boxShadow: 'var(--shadow-lg), 0 0 30px var(--accent-glow)' }}
+          style={{ boxShadow: 'var(--shadow-lg), 0 0 25px var(--accent-glow)' }}
         >
-          {creating ? 'Creating Room & Lobby…' : `🚀 Launch Live Arena (${questions.length} Questions)`} 
+          {creating ? 'Creating Room & Lobby…' : `Launch Game Room (${questions.length} Questions)`} 
           <ArrowRight size={20} />
         </button>
       </div>

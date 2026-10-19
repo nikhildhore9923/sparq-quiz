@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from './AuthContext'
 import Home from './pages/Home'
@@ -7,38 +7,12 @@ import HostRoom from './pages/HostRoom'
 import PlayerJoin from './pages/PlayerJoin'
 import PlayerRoom from './pages/PlayerRoom'
 import Login from './pages/Login'
-import { 
-  Zap, 
-  LogOut, 
-  LogIn, 
-  Sun, 
-  Moon, 
-  Volume2, 
-  VolumeX, 
-  ShieldCheck, 
-  Activity, 
-  Clock, 
-  Calendar,
-  Sparkles,
-  Users
-} from 'lucide-react'
+import { Zap, LogOut, LogIn, Sun, Moon, Volume2, VolumeX, ShieldCheck } from 'lucide-react'
 import { isSoundMuted, toggleSound } from './utils/sounds'
 
 function App() {
   const { username, logout } = useContext(AuthContext)
   const navigate = useNavigate()
-  const location = useLocation()
-
-  // Real-time clock & date
-  const [currentDateTime, setCurrentDateTime] = useState(new Date())
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const timeString = currentDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  const dateString = currentDateTime.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })
 
   // Theme state: read saved preference, fallback to system preference, default to dark
   const [theme, setTheme] = useState(() => {
@@ -98,71 +72,18 @@ function App() {
     navigate('/')
   }
 
-  // Determine current active breadcrumb text
-  const getContextLabel = () => {
-    const path = location.pathname
-    if (path.startsWith('/host/') || path.startsWith('/play/')) return 'Live Arena'
-    if (path === '/host') return 'Quiz Studio'
-    if (path === '/join') return 'Player Lobby'
-    if (path === '/login') return 'Host Portal'
-    return 'Arena Home'
-  }
-
   return (
     <div className="layout-wrapper">
       <header className="global-header">
-        <div className="header-brand-wrap">
-          <Link to="/" className="logo-container">
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <div className="logo-container">
             <div className="logo-icon-wrap">
               <Zap size={20} fill="currentColor" />
             </div>
-            <div>
-              <span className="logo-text">Sparq<span>.</span></span>
-            </div>
-          </Link>
-
-          <span 
-            style={{ 
-              fontSize: 12, 
-              fontWeight: 700, 
-              color: 'var(--text-secondary)',
-              background: 'var(--input-bg)',
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--panel-border)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5
-            }}
-          >
-            <span style={{ color: 'var(--accent)' }}>/</span> {getContextLabel()}
-          </span>
-        </div>
-
-        {/* Live Status & Clock Bar (SmartAttend-grade Live Telemetry) */}
-        <div className="header-status-group">
-          <div className="live-sync-pill">
-            <span style={{ 
-              width: 7, 
-              height: 7, 
-              borderRadius: '50%', 
-              backgroundColor: 'var(--correct)',
-              boxShadow: '0 0 8px var(--correct)',
-              display: 'inline-block' 
-            }} />
-            <span>WebSocket Engine: 24ms</span>
+            <span className="logo-text">Sparq<span>.</span></span>
           </div>
-
-          <div className="live-clock-pill">
-            <Clock size={13} color="var(--accent)" />
-            <span>{timeString}</span>
-            <span style={{ opacity: 0.4 }}>•</span>
-            <Calendar size={13} color="var(--accent)" />
-            <span>{dateString}</span>
-          </div>
-        </div>
-
-        {/* Global Controls & Host Status */}
+        </Link>
+        
         <div className="header-controls">
           <button
             className="icon-btn-round"
@@ -183,52 +104,36 @@ function App() {
           </button>
 
           {username ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div 
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '8px', 
+                  gap: '6px', 
                   fontSize: 13, 
                   color: 'var(--text-secondary)', 
                   fontWeight: 600,
                   background: 'var(--input-bg)',
-                  padding: '5px 12px',
+                  padding: '6px 12px',
                   borderRadius: 'var(--radius-full)',
                   border: '1px solid var(--panel-border)'
                 }}
               >
-                <div 
-                  style={{ 
-                    width: 22, 
-                    height: 22, 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--accent)', 
-                    color: '#ffffff',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {username.charAt(0).toUpperCase()}
-                </div>
-                <span style={{ color: 'var(--text-primary)' }}>{username}</span>
+                <ShieldCheck size={14} color="var(--accent)" />
+                <span style={{ color: 'var(--accent)' }}>{username}</span>
               </div>
               <button 
                 className="btn btn-ghost btn-sm" 
                 onClick={handleLogout} 
                 title="Sign out of host account"
-                style={{ padding: '6px 10px' }}
               >
-                <LogOut size={14} />
+                <LogOut size={14} /> Logout
               </button>
             </div>
           ) : (
             <Link to="/login" style={{ textDecoration: 'none' }}>
-              <button className="btn btn-ghost btn-sm" style={{ gap: 6 }}>
-                <ShieldCheck size={14} color="var(--accent)" /> Host Portal
+              <button className="btn btn-ghost btn-sm">
+                <LogIn size={14} /> Host Portal
               </button>
             </Link>
           )}
@@ -252,8 +157,7 @@ function App() {
         fontSize: '13px', 
         color: 'var(--text-muted)',
         borderTop: '1px solid var(--header-border)',
-        marginTop: 'auto',
-        background: 'var(--header-bg)'
+        marginTop: 'auto'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
           <span style={{ 
@@ -263,12 +167,10 @@ function App() {
             backgroundColor: 'var(--correct)',
             display: 'inline-block',
             boxShadow: '0 0 8px var(--correct)' 
-          }} />
-          <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Sparq Real-Time Game Engine 2.0</span>
-          <span>•</span>
-          <span>Sub-50ms WebSocket Broadcasts</span>
+          }}></span>
+          <span>Sparq Real-Time Quiz Engine Active</span>
         </div>
-        <p>Ultra-low latency live trivia platform • Powered by Groq AI & WebSocket Cluster</p>
+        <p>Ultra-low latency multiplayer trivia • Powered by WebSockets</p>
       </footer>
     </div>
   )
